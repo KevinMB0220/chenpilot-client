@@ -1,0 +1,300 @@
+// User and Authentication Types
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  address: string;
+  publicKey: string;
+  isDeployed: boolean;
+  isFunded: boolean;
+  tokenType: "STRK";
+  authProvider: "email" | "google";
+  isEmailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StarknetAccountInfo {
+  address: string;
+  publicKey: string;
+  isDeployed: boolean;
+  deploymentTransactionHash?: string;
+}
+
+export interface AccountStatus {
+  isDeployed: boolean;
+  isFunded: boolean;
+  deploymentTransactionHash?: string;
+  fundingTransactionHash?: string;
+  balance: string;
+  address: string;
+  publicKey: string;
+}
+
+// Authentication Request/Response Types
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+    starknetAccount: StarknetAccountInfo;
+    setupStatus: {
+      funding: {
+        success: boolean;
+        error?: string;
+        amount: string;
+        transactionHash?: string;
+      };
+      deployment: {
+        success: boolean;
+        transactionHash?: string;
+        contractAddress?: string;
+      };
+      fullyReady: boolean;
+    };
+  };
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+    starknetAccount: StarknetAccountInfo;
+  };
+}
+
+// Contact Management Types
+export interface Contact {
+  id: string;
+  name: string;
+  address: string;
+  tokenType: "STRK" | "ETH" | "DAI";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateContactRequest {
+  name: string;
+  address: string;
+  tokenType: "STRK" | "ETH" | "DAI";
+}
+
+export interface UpdateContactRequest {
+  name?: string;
+  address?: string;
+  tokenType?: "STRK" | "ETH" | "DAI";
+}
+
+// Balance and Wallet Types
+export interface BalanceResponse {
+  success: boolean;
+  data: {
+    hasBalance: boolean;
+    balance: string;
+    required: string;
+    nativeBalance: string;
+  };
+}
+
+export interface WalletBalance {
+  hasBalance: boolean;
+  balance: string;
+  required: string;
+  nativeBalance: string;
+}
+
+// Agent Query Types
+export interface AgentQueryRequest {
+  userId: string;
+  query: string;
+}
+
+export interface AgentQueryResponse {
+  result: {
+    success: boolean;
+    data: string;
+    error?: string;
+  };
+}
+
+// Chat and Message Types
+export interface ChatMessage {
+  id: string;
+  type: 'user' | 'agent' | 'system';
+  content: string;
+  timestamp: string;
+  metadata?: {
+    transactionHash?: string;
+    amount?: string;
+    tokenType?: string;
+    status?: 'pending' | 'success' | 'failed';
+  };
+}
+
+// API Response Types
+export interface ApiError {
+  success: false;
+  status: number;
+  message: string;
+}
+
+export interface ApiSuccess<T> {
+  success: true;
+  data: T;
+  message?: string;
+}
+
+export type ApiResponse<T> = ApiSuccess<T> | ApiError;
+
+// UI State Types
+export interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  duration?: number;
+  timestamp: string;
+}
+
+export interface Theme {
+  mode: 'light' | 'dark';
+}
+
+// Form Types
+export interface FormField {
+  name: string;
+  label: string;
+  type: 'text' | 'email' | 'password' | 'number' | 'select';
+  placeholder?: string;
+  required?: boolean;
+  validation?: any;
+  options?: { value: string; label: string }[];
+}
+
+// Navigation Types
+export interface NavItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: string;
+  badge?: string | number;
+  children?: NavItem[];
+}
+
+// Environment Configuration
+export interface Environment {
+  API_BASE_URL: string;
+  GOOGLE_CLIENT_ID: string;
+  APP_NAME: string;
+  APP_VERSION: string;
+  NODE_ENV: 'development' | 'production' | 'test';
+}
+
+// Redux State Types
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface AccountState {
+  status: AccountStatus | null;
+  balance: WalletBalance | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface ContactsState {
+  list: Contact[];
+  isLoading: boolean;
+  error: string | null;
+  selectedContact: Contact | null;
+}
+
+export interface ChatState {
+  messages: ChatMessage[];
+  isLoading: boolean;
+  error: string | null;
+  isTyping: boolean;
+}
+
+export interface UIState {
+  theme: Theme;
+  sidebarOpen: boolean;
+  notifications: Notification[];
+  modals: {
+    [key: string]: boolean;
+  };
+}
+
+export interface RootState {
+  auth: AuthState;
+  account: AccountState;
+  contacts: ContactsState;
+  chat: ChatState;
+  ui: UIState;
+}
+
+// Component Props Types
+export interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+  children: React.ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
+  className?: string;
+}
+
+export interface InputProps {
+  label?: string;
+  error?: string;
+  helperText?: string;
+  required?: boolean;
+  disabled?: boolean;
+  className?: string;
+  [key: string]: any;
+}
+
+export interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
+}
+
+export interface CardProps {
+  title?: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  className?: string;
+  actions?: React.ReactNode;
+}
+
+// Utility Types
+export type TokenType = "STRK" | "ETH" | "DAI" | "USDC" | "WBTC";
+export type AuthProvider = "email" | "google";
+export type MessageType = 'user' | 'agent' | 'system';
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
