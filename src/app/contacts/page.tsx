@@ -118,7 +118,7 @@ export default function ContactsPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="mt-4 text-gray-300">Loading...</p>
         </div>
       </div>
     );
@@ -126,17 +126,22 @@ export default function ContactsPage() {
 
   return (
     <ChatLayout>
-      <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="h-full flex flex-col bg-black text-white overflow-hidden relative">
+        {/* Simple Background */}
+        <div className="absolute inset-0">
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
+        </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Search and Stats */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-2xl font-bold text-white">
                 Your Contacts
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-300">
                 {contacts.length} contact{contacts.length !== 1 ? 's' : ''} total
               </p>
             </div>
@@ -156,15 +161,15 @@ export default function ContactsPage() {
         {isLoading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading contacts...</p>
+            <p className="mt-4 text-gray-300">Loading contacts...</p>
           </div>
         ) : filteredContacts.length === 0 ? (
           <Card className="text-center py-12">
             <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <h3 className="text-lg font-medium text-white mb-2">
               {searchTerm ? 'No contacts found' : 'No contacts yet'}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-300 mb-6">
               {searchTerm 
                 ? 'Try adjusting your search terms'
                 : 'Add your first contact to get started'
@@ -183,10 +188,10 @@ export default function ContactsPage() {
               <Card key={contact.id}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-semibold text-white">
                       {contact.name}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-300">
                       {contact.tokenType}
                     </p>
                   </div>
@@ -211,7 +216,7 @@ export default function ContactsPage() {
                 
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    <p className="text-sm font-medium text-gray-300 mb-1">
                       Address
                     </p>
                     <div className="flex items-center space-x-2">
@@ -237,7 +242,7 @@ export default function ContactsPage() {
                       size="sm"
                       onClick={() => {
                         // TODO: Implement QR code generation
-                        toast('QR code generation coming soon!', { icon: 'ℹ️' });
+                        toast('QR code generation coming soon!');
                       }}
                     >
                       <QrCode className="h-4 w-4" />

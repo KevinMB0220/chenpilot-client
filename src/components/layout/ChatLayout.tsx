@@ -8,22 +8,8 @@ import { toggleTheme } from '@/store/slices/uiSlice';
 import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 import { 
-  Menu, 
-  X, 
-  MessageCircle, 
-  LayoutDashboard, 
-  History, 
-  Settings, 
-  LogOut,
-  Sparkles,
-  User,
-  Users,
-  Plus,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Sun,
-  Moon
+  X,
+  Menu
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -54,17 +40,14 @@ export function ChatLayout({ children }: ChatLayoutProps) {
     {
       name: 'Dashboard',
       href: '/dashboard',
-      icon: LayoutDashboard,
     },
     {
       name: 'Contacts',
       href: '/contacts',
-      icon: Users,
     },
     {
       name: 'Settings',
       href: '/settings',
-      icon: Settings,
     },
   ];
 
@@ -124,11 +107,10 @@ export function ChatLayout({ children }: ChatLayoutProps) {
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              {!sidebarCollapsed && (
-                <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              {sidebarCollapsed ? (
+                <Menu className="h-6 w-6 text-purple-400" />
+              ) : (
+                <span className="text-xl font-bold text-purple-400">
                   ChenPilot
                 </span>
               )}
@@ -150,12 +132,11 @@ export function ChatLayout({ children }: ChatLayoutProps) {
             <Button
               onClick={handleNewChat}
               className={cn(
-                "w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl",
+                "w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl",
                 sidebarCollapsed ? "px-3" : "px-4"
               )}
             >
-              <Plus className="h-5 w-5" />
-              {!sidebarCollapsed && <span className="ml-2">New Chat</span>}
+              {!sidebarCollapsed && <span>New Chat</span>}
             </Button>
           </div>
 
@@ -178,9 +159,6 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                   title={sidebarCollapsed ? chat.title : undefined}
                 >
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <MessageCircle className="h-3 w-3 text-purple-400" />
-                    </div>
                     {!sidebarCollapsed && (
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-200 group-hover:text-white transition-colors truncate">
@@ -209,9 +187,6 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                 title={sidebarCollapsed ? user?.name || user?.email : undefined}
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-md">
-                    <User className="h-4 w-4 text-white" />
-                  </div>
                   {!sidebarCollapsed && (
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-medium text-white truncate">
@@ -225,9 +200,9 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                 </div>
                 {!sidebarCollapsed && (
                   profileMenuOpen ? (
-                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-400">^</span>
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-400">v</span>
                   )
                 )}
               </button>
@@ -236,14 +211,12 @@ export function ChatLayout({ children }: ChatLayoutProps) {
               {profileMenuOpen && !sidebarCollapsed && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
                   {profileMenuItems.map((item) => {
-                    const Icon = item.icon;
                     return (
                       <button
                         key={item.name}
                         onClick={() => handleNavigation(item.href)}
                         className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-200 hover:bg-gray-700/50 transition-all duration-200"
                       >
-                        <Icon className="h-4 w-4" />
                         <span>{item.name}</span>
                       </button>
                     );
@@ -253,7 +226,6 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                       onClick={handleLogout}
                       className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 transition-all duration-200"
                     >
-                      <LogOut className="h-4 w-4" />
                       <span>Sign Out</span>
                     </button>
                   </div>

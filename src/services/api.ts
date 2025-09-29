@@ -36,7 +36,7 @@ class ApiService {
                     process.env.NEXT_PUBLIC_API_BASE_URL === 'http://localhost:2333');
 
     if (this.useMock) {
-      console.log('🔧 Using Mock API Service for development');
+      console.log('Using Mock API Service for development');
     }
 
     // Request interceptor to add auth token
@@ -154,8 +154,17 @@ class ApiService {
   }
 
   async logout(): Promise<void> {
+    if (this.useMock) {
+      // Mock logout - just clear the token
+      this.clearToken();
+      return;
+    }
+    
     try {
       await this.api.post('/auth/logout');
+    } catch (error) {
+      // Even if logout fails on server, clear local token
+      console.warn('Logout request failed, clearing local token anyway');
     } finally {
       this.clearToken();
     }

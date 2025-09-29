@@ -10,19 +10,9 @@ import { loginSchema } from '@/utils/validation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { 
-  Sparkles, 
   Eye, 
   EyeOff, 
-  Mail, 
-  Lock, 
-  ArrowRight,
-  Bot,
-  Zap,
-  Shield,
-  Globe,
-  Github,
-  Twitter,
-  ExternalLink
+  ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -68,33 +58,16 @@ export default function LoginPage() {
   };
 
   const features = [
-    { icon: Bot, title: 'AI-Powered', description: 'Natural language DeFi operations' },
-    { icon: Zap, title: 'Lightning Fast', description: '120K TPS blockchain performance' },
-    { icon: Shield, title: 'Secure', description: 'Trustless and decentralized' },
-    { icon: Globe, title: 'Multi-Chain', description: 'Bitcoin & Starknet support' },
+    { title: 'AI-Powered', description: 'Natural language DeFi operations' },
+    { title: 'Lightning Fast', description: '120K TPS blockchain performance' },
+    { title: 'Secure', description: 'Trustless and decentralized' },
+    { title: 'Multi-Chain', description: 'Bitcoin & Starknet support' },
   ];
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
       {/* Animated Background */}
       <div className="absolute inset-0">
-        {/* Gradient Orbs */}
-        <div 
-          className="absolute w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse"
-          style={{
-            left: `${mousePosition.x * 0.1}px`,
-            top: `${mousePosition.y * 0.1}px`,
-            transform: 'translate(-50%, -50%)',
-          }}
-        />
-        <div 
-          className="absolute w-80 h-80 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse"
-          style={{
-            right: `${mousePosition.x * 0.05}px`,
-            bottom: `${mousePosition.y * 0.05}px`,
-            transform: 'translate(50%, 50%)',
-          }}
-        />
         
         {/* Grid Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
@@ -105,21 +78,20 @@ export default function LoginPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <Sparkles className="h-8 w-8 text-purple-400" />
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="text-xl font-bold text-purple-400">
                 ChenPilot
               </span>
             </div>
             
             <div className="flex items-center space-x-2">
               <a href="#" className="p-2 text-gray-400 hover:text-white transition-colors">
-                <Github className="h-5 w-5" />
+                GitHub
               </a>
               <a href="#" className="p-2 text-gray-400 hover:text-white transition-colors">
-                <Twitter className="h-5 w-5" />
+                Twitter
               </a>
               <a href="#" className="p-2 text-gray-400 hover:text-white transition-colors">
-                <ExternalLink className="h-5 w-5" />
+                Docs
               </a>
             </div>
           </div>
@@ -134,7 +106,7 @@ export default function LoginPage() {
           <div className="space-y-8">
             <div>
               <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                <span className="text-purple-400">
                   Welcome Back
                 </span>
               </h1>
@@ -145,15 +117,11 @@ export default function LoginPage() {
 
             <div className="grid grid-cols-2 gap-6">
               {features.map((feature, index) => {
-                const Icon = feature.icon;
                 return (
                   <div
                     key={index}
                     className="group p-6 bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl hover:border-gray-700 transition-all duration-300 hover:transform hover:scale-105"
                   >
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <Icon className="h-6 w-6 text-white" />
-                    </div>
                     <h3 className="text-lg font-semibold mb-2 text-white">
                       {feature.title}
                     </h3>
@@ -170,9 +138,6 @@ export default function LoginPage() {
           <div className="w-full max-w-md mx-auto">
             <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-3xl p-8 shadow-2xl">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="h-8 w-8 text-white" />
-                </div>
                 <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
                 <p className="text-gray-400">Enter your credentials to continue</p>
               </div>
@@ -183,15 +148,12 @@ export default function LoginPage() {
                     Email Address
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                    </div>
                     <Input
                       {...register('email')}
                       type="email"
                       id="email"
                       placeholder="Enter your email"
-                      className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
                     />
                   </div>
                   {errors.email && (
@@ -204,15 +166,12 @@ export default function LoginPage() {
                     Password
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400" />
-                    </div>
                     <Input
                       {...register('password')}
                       type={showPassword ? 'text' : 'password'}
                       id="password"
                       placeholder="Enter your password"
-                      className="pl-10 pr-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
+                      className="pr-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-purple-500 focus:ring-purple-500"
                     />
                     <button
                       type="button"
@@ -254,7 +213,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
@@ -289,27 +248,14 @@ export default function LoginPage() {
       {/* Floating Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-20 animate-float">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl">
-            <Bot className="h-8 w-8 text-white" />
-          </div>
         </div>
         
         <div className="absolute top-32 right-32 animate-float-delayed">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-2xl">
-            <Zap className="h-6 w-6 text-white" />
-          </div>
         </div>
 
         <div className="absolute bottom-20 left-1/3 animate-float-slow">
-          <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-2xl">
-            <Shield className="h-7 w-7 text-white" />
-          </div>
         </div>
 
-        {/* Floating Orbs */}
-        <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-purple-400 rounded-full animate-ping" />
-        <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-1/3 left-1/2 w-5 h-5 bg-cyan-400 rounded-full animate-ping" style={{ animationDelay: '2s' }} />
       </div>
 
       <style jsx>{`

@@ -5,19 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store';
 import { Button } from '@/components/ui/Button';
 import { 
-  Bot, 
-  Zap, 
-  Shield, 
-  Globe, 
-  ArrowRight, 
-  Sparkles,
-  Github,
-  Twitter,
-  ExternalLink,
-  MessageCircle,
-  Wallet,
-  Users,
-  BarChart3
+  ArrowRight
 } from 'lucide-react';
 
 export default function Home() {
@@ -36,28 +24,20 @@ export default function Home() {
 
   const features = [
     {
-      icon: Bot,
       title: 'AI-Powered Agent',
       description: 'Natural language interface for complex DeFi operations',
-      gradient: 'from-purple-500 to-pink-500',
     },
     {
-      icon: Zap,
       title: 'Cross-Chain Swaps',
       description: 'Seamless Bitcoin to Starknet asset swaps',
-      gradient: 'from-blue-500 to-cyan-500',
     },
     {
-      icon: Shield,
       title: 'Secure & Trustless',
       description: 'No counterparty risk with decentralized operations',
-      gradient: 'from-green-500 to-emerald-500',
     },
     {
-      icon: Globe,
       title: 'Multi-Chain Support',
       description: 'Unified interface for Bitcoin and Starknet',
-      gradient: 'from-orange-500 to-red-500',
     },
   ];
 
@@ -72,26 +52,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
-      {/* Animated Background */}
+      {/* Simple Background */}
       <div className="absolute inset-0">
-        {/* Gradient Orbs */}
-        <div 
-          className="absolute w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse"
-          style={{
-            left: `${mousePosition.x * 0.1}px`,
-            top: `${mousePosition.y * 0.1}px`,
-            transform: 'translate(-50%, -50%)',
-          }}
-        />
-        <div 
-          className="absolute w-80 h-80 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl animate-pulse"
-          style={{
-            right: `${mousePosition.x * 0.05}px`,
-            bottom: `${mousePosition.y * 0.05}px`,
-            transform: 'translate(50%, 50%)',
-          }}
-        />
-        
         {/* Grid Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
       </div>
@@ -101,8 +63,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <Sparkles className="h-8 w-8 text-purple-400" />
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="text-xl font-bold text-purple-400">
                 ChenPilot
               </span>
             </div>
@@ -114,27 +75,27 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <a href="#" className="p-2 text-gray-400 hover:text-white transition-colors">
-                  <Github className="h-5 w-5" />
+                  GitHub
                 </a>
                 <a href="#" className="p-2 text-gray-400 hover:text-white transition-colors">
-                  <Twitter className="h-5 w-5" />
+                  Twitter
                 </a>
                 <a href="#" className="p-2 text-gray-400 hover:text-white transition-colors">
-                  <ExternalLink className="h-5 w-5" />
+                  Docs
                 </a>
               </div>
               
               {isAuthenticated ? (
                 <Button
                   onClick={() => router.push('/chat')}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   Go to Chat
                 </Button>
               ) : (
                 <Button
                   onClick={() => router.push('/auth/login')}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   Get Started
                 </Button>
@@ -149,7 +110,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-32">
           <div className="text-center">
             <h1 className="text-6xl md:text-8xl font-bold mb-8">
-              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="text-purple-400">
                 A Fast Blockchain.
               </span>
               <br />
@@ -166,7 +127,7 @@ export default function Home() {
             <div className="flex justify-center items-center">
               <Button
                 onClick={() => router.push(isAuthenticated ? '/chat' : '/auth/login')}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold rounded-xl"
               >
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -175,47 +136,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Animated Graphics Section */}
-        <div className="relative h-96 overflow-hidden">
-          {/* Floating Elements */}
-          <div className="absolute inset-0">
-            {/* Robot Elements */}
-            <div className="absolute top-20 left-20 animate-float">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl">
-                <Bot className="h-8 w-8 text-white" />
-              </div>
-            </div>
-            
-            <div className="absolute top-32 right-32 animate-float-delayed">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-2xl">
-                <Zap className="h-6 w-6 text-white" />
-              </div>
-            </div>
-
-            <div className="absolute bottom-20 left-1/3 animate-float-slow">
-              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-2xl">
-                <Shield className="h-7 w-7 text-white" />
-              </div>
-            </div>
-
-            {/* Glowing Ribbon */}
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-32">
-              <div className="w-full h-full bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-cyan-500/30 rounded-full blur-xl animate-pulse" />
-            </div>
-
-            {/* Floating Orbs */}
-            <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-purple-400 rounded-full animate-ping" />
-            <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '1s' }} />
-            <div className="absolute bottom-1/3 left-1/2 w-5 h-5 bg-cyan-400 rounded-full animate-ping" style={{ animationDelay: '2s' }} />
-          </div>
-        </div>
 
         {/* Features Section */}
         <section id="features" className="py-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <span className="text-purple-400">
                   Powerful Features
                 </span>
               </h2>
@@ -226,15 +153,11 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {features.map((feature, index) => {
-                const Icon = feature.icon;
                 return (
                   <div
                     key={index}
                     className="group relative p-8 bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl hover:border-gray-700 transition-all duration-300 hover:transform hover:scale-105"
                   >
-                    <div className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                      <Icon className="h-8 w-8 text-white" />
-                    </div>
                     <h3 className="text-xl font-semibold mb-4 text-white">
                       {feature.title}
                     </h3>
@@ -253,7 +176,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                <span className="text-blue-400">
                   What You Can Do
                 </span>
               </h2>
@@ -269,9 +192,6 @@ export default function Home() {
                   className="group p-6 bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl hover:border-gray-700 transition-all duration-300"
                 >
                   <div className="flex items-start space-x-4">
-                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <MessageCircle className="h-4 w-4 text-white" />
-                    </div>
                     <p className="text-gray-300 group-hover:text-white transition-colors">
                       {capability}
                     </p>
@@ -286,7 +206,7 @@ export default function Home() {
         <section className="py-32">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl md:text-5xl font-bold mb-8">
-              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="text-purple-400">
                 Ready to Experience
               </span>
               <br />
@@ -300,7 +220,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
                 onClick={() => router.push(isAuthenticated ? '/chat' : '/auth/login')}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 text-lg font-semibold rounded-xl"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl"
               >
                 Start Chatting Now
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -315,8 +235,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <Sparkles className="h-6 w-6 text-purple-400" />
-              <span className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <span className="text-lg font-bold text-purple-400">
                 ChenPilot
               </span>
             </div>

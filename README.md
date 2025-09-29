@@ -2,7 +2,7 @@
 
 A modern, responsive web client for **ChenPilot** - a Starknet-based crypto wallet management system with AI agent capabilities. Built with Next.js, TypeScript, and Tailwind CSS.
 
-## 🚀 Features
+## Features
 
 ### Core Functionality
 - **AI-Powered Agent Interface**: Natural language interface for complex DeFi operations
@@ -19,7 +19,7 @@ A modern, responsive web client for **ChenPilot** - a Starknet-based crypto wall
 - **API Integration**: Axios-based service layer with error handling
 - **Authentication**: JWT-based auth with protected routes
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
@@ -31,7 +31,7 @@ A modern, responsive web client for **ChenPilot** - a Starknet-based crypto wall
 - **Notifications**: React Hot Toast
 - **Package Manager**: pnpm
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -55,7 +55,7 @@ src/
 └── config/               # Configuration files
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js 18+ 
@@ -95,7 +95,7 @@ src/
 5. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 🔧 Available Scripts
+## Available Scripts
 
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
@@ -103,7 +103,7 @@ src/
 - `pnpm lint` - Run ESLint
 - `pnpm test` - Run tests (when implemented)
 
-## 🎨 UI Components
+## UI Components
 
 ### Core Components
 - **Button**: Primary, secondary, ghost, and danger variants
@@ -116,7 +116,7 @@ src/
 - **Sidebar**: Collapsible navigation sidebar
 - **Footer**: Application footer with links
 
-## 🔐 Authentication
+## Authentication
 
 The application implements a complete authentication system:
 
@@ -133,7 +133,7 @@ The application implements a complete authentication system:
 - `/contacts` - Contact management
 - `/settings` - User settings
 
-## 🤖 AI Agent Integration
+## AI Agent Integration
 
 ### Supported Operations
 - **Meta Operations**: "What is your name?", "What can you do?"
@@ -148,21 +148,21 @@ The application implements a complete authentication system:
 - Copy-to-clipboard functionality
 - Transaction status tracking
 
-## 📱 Responsive Design
+## Responsive Design
 
 The application is fully responsive and optimized for:
 - Desktop (1024px+)
 - Tablet (768px - 1023px)
 - Mobile (320px - 767px)
 
-## 🌙 Theme Support
+## Theme Support
 
 - Light and dark theme support
 - System preference detection
 - Persistent theme selection
 - Smooth theme transitions
 
-## 🔌 API Integration
+## API Integration
 
 ### Endpoints
 - **Authentication**: `/auth/*` - Login, register, profile management
@@ -176,7 +176,7 @@ The application is fully responsive and optimized for:
 - Network error recovery
 - Loading states and feedback
 
-## 🧪 Testing
+## Testing
 
 Testing framework setup (to be implemented):
 - Unit tests with Vitest
@@ -184,7 +184,7 @@ Testing framework setup (to be implemented):
 - E2E tests with Playwright
 - API integration tests
 
-## 🚀 Deployment
+## Deployment
 
 ### Build for Production
 ```bash
@@ -199,7 +199,7 @@ pnpm vercel
 ### Environment Variables for Production
 Ensure all required environment variables are set in your deployment platform.
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -207,18 +207,18 @@ Ensure all required environment variables are set in your deployment platform.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## Support
 
 For support and questions:
 - Create an issue in the repository
 - Check the documentation
 - Contact the development team
 
-## 🔮 Roadmap
+## Roadmap
 
 ### Upcoming Features
 - [ ] Advanced DeFi operations
@@ -237,4 +237,4 @@ For support and questions:
 
 ---
 
-Built with ❤️ by the ChenPilot Team
+Built with love by the ChenPilot Team
