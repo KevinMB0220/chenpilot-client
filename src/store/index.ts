@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
-import authSlice from './slices/authSlice';
+import authSlice, { initializeAuth } from './slices/authSlice';
 import accountSlice from './slices/accountSlice';
 import contactsSlice from './slices/contactsSlice';
-import chatSlice from './slices/chatSlice';
+import chatSlice, { initializeChatHistory } from './slices/chatSlice';
 import uiSlice from './slices/uiSlice';
 
 export const store = configureStore({
@@ -28,3 +28,9 @@ export type AppDispatch = typeof store.dispatch;
 // Typed hooks
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+
+// Initialize auth and chat history on app startup
+if (typeof window !== 'undefined') {
+  store.dispatch(initializeAuth());
+  store.dispatch(initializeChatHistory());
+}

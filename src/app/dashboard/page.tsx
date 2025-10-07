@@ -3,14 +3,18 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { getAccountStatus, getBalance } from '@/store/slices/accountSlice';
+import { getAccountStatus, getBalance, deployAccount, fundAccount } from '@/store/slices/accountSlice';
 import { loadUser } from '@/store/slices/authSlice';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ChatLayout } from '@/components/layout/ChatLayout';
 import { 
   Copy, 
-  ExternalLink
+  ExternalLink,
+  Clock,
+  ArrowUpRight,
+  ArrowDownLeft,
+  RefreshCw
 } from 'lucide-react';
 import { formatAddress, formatTokenAmount } from '@/utils/format';
 import toast from 'react-hot-toast';
@@ -20,6 +24,7 @@ export default function DashboardPage() {
   const dispatch = useAppDispatch();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const { status, balance, isLoading } = useAppSelector((state) => state.account);
+  const { messages } = useAppSelector((state) => state.chat);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -36,6 +41,31 @@ export default function DashboardPage() {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard`);
+  };
+
+  const handleDeployAccount = async () => {
+    try {
+      await dispatch(deployAccount()).unwrap();
+      toast.success('Account deployment initiated!');
+      // Refresh account status
+      dispatch(getAccountStatus());
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Deployment failed';
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleFundAccount = async () => {
+    try {
+      await dispatch(fundAccount()).unwrap();
+      toast.success('Account funding initiated!');
+      // Refresh account status and balance
+      dispatch(getAccountStatus());
+      dispatch(getBalance());
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Funding failed';
+      toast.error(errorMessage);
+    }
   };
 
   const quickActions = [
@@ -135,12 +165,10 @@ export default function DashboardPage() {
               <Button
                 size="sm"
                 className="mt-2"
-                onClick={() => {
-                  // TODO: Implement account deployment
-                  toast('Account deployment coming soon!');
-                }}
+                onClick={handleDeployAccount}
+                disabled={isLoading}
               >
-                Deploy Account
+                {isLoading ? 'Deploying...' : 'Deploy Account'}
               </Button>
             )}
           </Card>
@@ -163,12 +191,10 @@ export default function DashboardPage() {
               <Button
                 size="sm"
                 className="mt-2"
-                onClick={() => {
-                  // TODO: Implement account funding
-                  toast('Account funding coming soon!');
-                }}
+                onClick={handleFundAccount}
+                disabled={isLoading}
               >
-                Fund Account
+                {isLoading ? 'Funding...' : 'Fund Account'}
               </Button>
             )}
           </Card>
@@ -233,18 +259,152 @@ export default function DashboardPage() {
             Recent Activity
           </h2>
           <Card>
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-white mb-2">
-                No recent activity
-              </h3>
-              <p className="text-gray-300 mb-4">
-                Your recent transactions and interactions will appear here.
-              </p>
-              <Button
-                onClick={() => router.push('/chat')}
-              >
-                Start with AI Agent
-              </Button>
+            {messages.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-white">
+                    Recent Chat Messages
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push('/chat')}
+                  >
+                    View All
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {messages.slice(-5).reverse().map((message, index) => (
+                    <div key={index} className="flex items-start space-x-2 p-2 bg-gray-800/50 rounded-lg">
+                      <div className={`w-2 h-2 rounded-full mt-2 ${
+                        message.type === 'user' ? 'bg-blue-500' : 'bg-green-500'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="text-sm font-medium text-white">
+                            {message.type === 'user' ? 'You' : 'AI Agent'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-300 truncate">
+                          {message.content.length > 100 
+                            ? message.content.substring(0, 100) + '...' 
+                            : message.content
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="text-lg font-medium text-white mb-2">
+                  No recent activity
+                </h3>
+                <p className="text-gray-300 mb-4">
+                  Your recent transactions and interactions will appear here.
+                </p>
+                <Button
+                  onClick={() => router.push('/chat')}
+                >
+                  Start with AI Agent
+                </Button>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Transaction History */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Transaction History
+          </h2>
+          <Card>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-white">
+                  Recent Transactions
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    // TODO: Implement transaction history fetch
+                    toast('Transaction history coming soon!');
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Refresh
+                </Button>
+              </div>
+              
+              {/* Mock transaction data - will be replaced with real data */}
+              <div className="space-y-3">
+                {status?.deploymentTransactionHash && (
+                  <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
+                      <ArrowUpRight className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-white">
+                          Account Deployment
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date().toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-300">
+                        Transaction: {formatAddress(status.deploymentTransactionHash)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm text-green-400">Deployed</span>
+                    </div>
+                  </div>
+                )}
+                
+                {status?.fundingTransactionHash && (
+                  <div className="flex items-center space-x-3 p-3 bg-gray-800/50 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                      <ArrowDownLeft className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-white">
+                          Account Funding
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date().toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-300">
+                        Transaction: {formatAddress(status.fundingTransactionHash)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm text-blue-400">Funded</span>
+                    </div>
+                  </div>
+                )}
+                
+                {!status?.deploymentTransactionHash && !status?.fundingTransactionHash && (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-white mb-2">
+                      No transactions yet
+                    </h3>
+                    <p className="text-gray-300 mb-4">
+                      Your transaction history will appear here once you start using ChenPilot.
+                    </p>
+                    <Button
+                      onClick={() => router.push('/chat')}
+                    >
+                      Start with AI Agent
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
         </div>
@@ -272,8 +432,12 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   {!status?.isDeployed && (
-                    <Button size="sm">
-                      Deploy Now
+                    <Button 
+                      size="sm"
+                      onClick={handleDeployAccount}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Deploying...' : 'Deploy Now'}
                     </Button>
                   )}
                 </div>
@@ -293,8 +457,12 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   {!status?.isFunded && (
-                    <Button size="sm">
-                      Fund Now
+                    <Button 
+                      size="sm"
+                      onClick={handleFundAccount}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Funding...' : 'Fund Now'}
                     </Button>
                   )}
                 </div>

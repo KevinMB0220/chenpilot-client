@@ -9,6 +9,7 @@ export const emailSchema = z
 // Password validation schema
 export const passwordSchema = z
   .string()
+  .min(1, 'Password is required')
   .min(8, 'Password must be at least 8 characters')
   .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number');
 
@@ -57,6 +58,12 @@ export const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   name: nameSchema.optional(),
+}).refine((data) => {
+  // Additional validation to ensure all required fields are present
+  return data.email && data.password && typeof data.email === 'string' && typeof data.password === 'string';
+}, {
+  message: "All required fields must be provided",
+  path: ["email"]
 });
 
 export const changePasswordSchema = z.object({

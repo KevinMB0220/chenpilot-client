@@ -11,6 +11,7 @@ import { History, MessageCircle, Clock } from 'lucide-react';
 export default function ChatHistoryPage() {
   const router = useRouter();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { messages } = useAppSelector((state) => state.chat);
 
   if (!isAuthenticated) {
     return (
@@ -37,24 +38,78 @@ export default function ChatHistoryPage() {
               </p>
             </div>
 
-            <Card>
-              <div className="text-center py-12">
-                <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No chat history yet
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Your previous conversations will appear here once you start chatting.
-                </p>
-                <Button
-                  onClick={() => router.push('/chat')}
-                  className="inline-flex items-center"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Start New Chat
-                </Button>
+            {messages.length === 0 ? (
+              <Card>
+                <div className="text-center py-12">
+                  <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No chat history yet
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Your previous conversations will appear here once you start chatting.
+                  </p>
+                  <Button
+                    onClick={() => router.push('/chat')}
+                    className="inline-flex items-center"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Start New Chat
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Recent Conversations ({messages.length} messages)
+                  </h2>
+                  <Button
+                    onClick={() => router.push('/chat')}
+                    className="inline-flex items-center"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    New Chat
+                  </Button>
+                </div>
+                
+                <div className="grid gap-2">
+                  {messages.map((message, index) => (
+                    <Card key={message.id} className="p-2 hover:shadow-md transition-shadow">
+                      <div className="flex items-start space-x-2">
+                        <div className={`w-2 h-2 rounded-full mt-1 ${
+                          message.type === 'user' ? 'bg-blue-500' : 
+                          message.type === 'agent' ? 'bg-green-500' : 'bg-gray-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                              {message.type}
+                            </p>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                            {message.content}
+                          </p>
+                          {message.metadata && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {message.metadata?.type && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                  {message.metadata?.type}
+                                </span>
+                              )}
+                              {message.metadata?.action && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                  {message.metadata?.action}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </Card>
+            )}
           </div>
         </div>
       </div>

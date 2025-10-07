@@ -9,6 +9,7 @@ import { login } from '@/store/slices/authSlice';
 import { loginSchema } from '@/utils/validation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignIn';
 import { 
   Eye, 
   EyeOff, 
@@ -228,6 +229,30 @@ export default function LoginPage() {
                   )}
                 </Button>
               </form>
+
+              {/* Google Sign-in */}
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-700" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-gray-900 text-gray-400">Or continue with</span>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <GoogleSignInButton
+                    onSuccess={() => {
+                      router.push('/chat');
+                    }}
+                    onError={(error) => {
+                      console.error('Google Sign-in error:', error);
+                    }}
+                    className="w-full"
+                  />
+                </div>
+              </div>
 
               <div className="mt-6 text-center">
                 <p className="text-gray-400">

@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppDispatch } from '@/store';
-import { register } from '@/store/slices/authSlice';
+import { register as registerUser } from '@/store/slices/authSlice';
 import { registerSchema } from '@/utils/validation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignIn';
 import { 
   Eye, 
   EyeOff, 
@@ -48,12 +49,45 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      const result = await dispatch(register(data)).unwrap();
+      // Debug: Log the form data to see what's being submitted
+      console.log('Registration form data:', data);
+      console.log('Data types:', {
+        email: typeof data.email,
+        password: typeof data.password,
+        name: typeof data.name
+      });
+
+      // Ensure all required fields are present and are strings
+      if (!data.email || typeof data.email !== 'string') {
+        throw new Error('Email is required and must be a string');
+      }
+      if (!data.password || typeof data.password !== 'string') {
+        throw new Error('Password is required and must be a string');
+      }
+
+      // Ensure name is a string if provided
+      const cleanData = {
+        email: String(data.email),
+        password: String(data.password),
+        name: data.name !== undefined && data.name !== null ? String(data.name) : undefined
+      };
+
+      // Log cleanData types for debugging
+      Object.entries(cleanData).forEach(([key, value]) => {
+        console.log(`${key}:`, value, 'type:', typeof value);
+      });
+
+      const result = await dispatch(registerUser(cleanData)).unwrap();
       toast.success('Account created successfully! Welcome to ChenPilot!');
       router.push('/chat');
     } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : String(error || 'Registration failed');
-      toast.error(errorMessage);
+      // Normalize common Axios/thunk error shapes to user-friendly message
+      const backendMessage = error?.message
+        || error?.response?.data?.message
+        || error?.payload
+        || error?.error
+        || 'Registration failed';
+      toast.error(String(backendMessage));
     }
   };
 
@@ -257,6 +291,30 @@ export default function RegisterPage() {
                   )}
                 </Button>
               </form>
+
+              {/* Google Sign-in */}
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-700" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-gray-900 text-gray-400">Or continue with</span>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <GoogleSignInButton
+                    onSuccess={() => {
+                      router.push('/chat');
+                    }}
+                    onError={(error) => {
+                      console.error('Google Sign-in error:', error);
+                    }}
+                    className="w-full"
+                  />
+                </div>
+              </div>
 
               <div className="mt-6 text-center">
                 <p className="text-gray-400">

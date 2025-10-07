@@ -60,6 +60,7 @@ src/
 ### Prerequisites
 - Node.js 18+ 
 - pnpm (recommended) or npm
+- ChenPilot Experimental Backend (see [AGENT_INTEGRATION.md](./AGENT_INTEGRATION.md))
 
 ### Installation
 
@@ -87,12 +88,25 @@ src/
    NEXT_PUBLIC_APP_VERSION=1.0.0
    ```
 
-4. **Start the development server**
+4. **Start the experimental backend** (required for full functionality)
    ```bash
+   cd ../chenpilot-experimental
+   npm install
+   npm run dev
+   ```
+
+5. **Start the development server**
+   ```bash
+   cd ../chenpilot-client
    pnpm dev
    ```
 
-5. **Open your browser**
+6. **Test the integration**
+   ```bash
+   node test-integration.js
+   ```
+
+7. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## Available Scripts

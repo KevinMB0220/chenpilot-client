@@ -11,14 +11,15 @@ import {
   BalanceResponse,
   AgentQueryRequest,
   AgentQueryResponse,
-  ApiResponse
+  ApiResponse,
+  ChatMessage,
+  Conversation
 } from '@/types';
-import mockApiService from './mockApi';
+import agentService from './agentService';
 
 class ApiService {
   private api: AxiosInstance;
   private token: string | null = null;
-  private useMock: boolean = false;
 
   constructor() {
     this.api = axios.create({
@@ -28,16 +29,6 @@ class ApiService {
         'Content-Type': 'application/json',
       },
     });
-
-    // Check if we should use mock service (when no backend is available)
-    this.useMock = process.env.NODE_ENV === 'development' && 
-                   (process.env.NEXT_PUBLIC_USE_MOCK_API === 'true' ||
-                    !process.env.NEXT_PUBLIC_API_BASE_URL || 
-                    process.env.NEXT_PUBLIC_API_BASE_URL === 'http://localhost:2333');
-
-    if (this.useMock) {
-      console.log('Using Mock API Service for development');
-    }
 
     // Request interceptor to add auth token
     this.api.interceptors.request.use(
@@ -93,36 +84,50 @@ class ApiService {
 
   // Authentication endpoints
   async register(data: RegisterRequest): Promise<RegisterResponse> {
-    if (this.useMock) {
-      return await mockApiService.register(data);
+    // Validate input data before processing
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid registration data');
     }
     
-    try {
-      const response = await this.api.post<RegisterResponse>('/auth/register', data);
-      return response.data;
-    } catch (error) {
-      // Fallback to mock service if backend is not available
-      console.warn('Backend not available, using mock service for register');
-      return await mockApiService.register(data);
+    if (!data.email || typeof data.email !== 'string') {
+      throw new Error('Email is required and must be a string');
     }
+    
+    if (!data.password || typeof data.password !== 'string') {
+      throw new Error('Password is required and must be a string');
+    }
+    
+    if (data.name && typeof data.name !== 'string') {
+      throw new Error('Name must be a string if provided');
+    }
+    
+    const response = await this.api.post<RegisterResponse>('/auth/register', data);
+    // Persist token on successful registration to keep the user authenticated
+    if (response.data?.success && (response.data as any)?.data?.token) {
+      this.setToken((response.data as any).data.token);
+    }
+    return response.data;
   }
 
   async login(data: LoginRequest): Promise<LoginResponse> {
-    if (this.useMock) {
-      return await mockApiService.login(data);
+    // Validate input data before processing
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid login data');
     }
     
-    try {
-      const response = await this.api.post<LoginResponse>('/auth/login', data);
-      if (response.data.success && response.data.data.token) {
-        this.setToken(response.data.data.token);
-      }
-      return response.data;
-    } catch (error) {
-      // Fallback to mock service if backend is not available
-      console.warn('Backend not available, using mock service for login');
-      return await mockApiService.login(data);
+    if (!data.email || typeof data.email !== 'string') {
+      throw new Error('Email is required and must be a string');
     }
+    
+    if (!data.password || typeof data.password !== 'string') {
+      throw new Error('Password is required and must be a string');
+    }
+    
+    const response = await this.api.post<LoginResponse>('/auth/login', data);
+    if (response.data.success && response.data.data.token) {
+      this.setToken(response.data.data.token);
+    }
+    return response.data;
   }
 
   async googleAuth(token: string): Promise<LoginResponse> {
@@ -154,12 +159,6 @@ class ApiService {
   }
 
   async logout(): Promise<void> {
-    if (this.useMock) {
-      // Mock logout - just clear the token
-      this.clearToken();
-      return;
-    }
-    
     try {
       await this.api.post('/auth/logout');
     } catch (error) {
@@ -172,17 +171,8 @@ class ApiService {
 
   // Protected endpoints
   async getProfile(): Promise<ApiResponse<User>> {
-    if (this.useMock) {
-      return await mockApiService.getProfile();
-    }
-    
-    try {
-      const response = await this.api.get<ApiResponse<User>>('/auth/profile');
-      return response.data;
-    } catch (error) {
-      console.warn('Backend not available, using mock service for getProfile');
-      return await mockApiService.getProfile();
-    }
+    const response = await this.api.get<ApiResponse<User>>('/auth/profile');
+    return response.data;
   }
 
   async updateProfile(data: Partial<User>): Promise<ApiResponse<User>> {
@@ -211,31 +201,13 @@ class ApiService {
   }
 
   async getBalance(): Promise<BalanceResponse> {
-    if (this.useMock) {
-      return await mockApiService.getBalance();
-    }
-    
-    try {
-      const response = await this.api.get<BalanceResponse>('/auth/starknet/balance');
-      return response.data;
-    } catch (error) {
-      console.warn('Backend not available, using mock service for getBalance');
-      return await mockApiService.getBalance();
-    }
+    const response = await this.api.get<BalanceResponse>('/auth/starknet/balance');
+    return response.data;
   }
 
   async getAccountStatus(): Promise<ApiResponse<{ isDeployed: boolean; isFunded: boolean; address: string; publicKey: string }>> {
-    if (this.useMock) {
-      return await mockApiService.getAccountStatus();
-    }
-    
-    try {
-      const response = await this.api.get<ApiResponse<{ isDeployed: boolean; isFunded: boolean; address: string; publicKey: string }>>('/auth/starknet/status');
-      return response.data;
-    } catch (error) {
-      console.warn('Backend not available, using mock service for getAccountStatus');
-      return await mockApiService.getAccountStatus();
-    }
+    const response = await this.api.get<ApiResponse<{ isDeployed: boolean; isFunded: boolean; address: string; publicKey: string }>>('/auth/starknet/status');
+    return response.data;
   }
 
   // Auto-funding
@@ -259,76 +231,296 @@ class ApiService {
     return response.data;
   }
 
-  // Contact management
+  // Contact management - Note: Contact endpoints are not available in experimental backend
+  // Contact management is handled through the agent query system
   async getContacts(): Promise<ApiResponse<Contact[]>> {
-    if (this.useMock) {
-      return await mockApiService.getContacts();
-    }
-    
     try {
       const response = await this.api.get<ApiResponse<Contact[]>>('/contacts');
       return response.data;
-    } catch (error) {
-      console.warn('Backend not available, using mock service for getContacts');
-      return await mockApiService.getContacts();
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Contact endpoints not available in experimental backend
+        return {
+          success: true,
+          data: [],
+          message: 'Contact management is available through the chat interface'
+        };
+      }
+      throw error;
     }
   }
 
   async createContact(data: CreateContactRequest): Promise<ApiResponse<Contact>> {
-    if (this.useMock) {
-      return await mockApiService.createContact(data);
-    }
-    
     try {
       const response = await this.api.post<ApiResponse<Contact>>('/contacts', data);
       return response.data;
-    } catch (error) {
-      console.warn('Backend not available, using mock service for createContact');
-      return await mockApiService.createContact(data);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Contact endpoints not available in experimental backend
+        return {
+          success: false,
+          message: 'Contact creation is available through the chat interface. Try: "Add John as a contact with address 0x123..."'
+        };
+      }
+      throw error;
     }
   }
 
   async updateContact(id: string, data: UpdateContactRequest): Promise<ApiResponse<Contact>> {
-    if (this.useMock) {
-      return await mockApiService.updateContact(id, data);
-    }
-    
     try {
       const response = await this.api.put<ApiResponse<Contact>>(`/contacts/${id}`, data);
       return response.data;
-    } catch (error) {
-      console.warn('Backend not available, using mock service for updateContact');
-      return await mockApiService.updateContact(id, data);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Contact endpoints not available in experimental backend
+        return {
+          success: false,
+          message: 'Contact updates are available through the chat interface'
+        };
+      }
+      throw error;
     }
   }
 
   async deleteContact(id: string): Promise<ApiResponse<{ message: string }>> {
-    if (this.useMock) {
-      return await mockApiService.deleteContact(id);
-    }
-    
     try {
       const response = await this.api.delete<ApiResponse<{ message: string }>>(`/contacts/${id}`);
       return response.data;
-    } catch (error) {
-      console.warn('Backend not available, using mock service for deleteContact');
-      return await mockApiService.deleteContact(id);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Contact endpoints not available in experimental backend
+        return {
+          success: false,
+          message: 'Contact deletion is available through the chat interface. Try: "Remove John from my contacts"'
+        };
+      }
+      throw error;
     }
   }
 
-  // Agent query
+  // Agent query - Enhanced with experimental agent integration
   async queryAgent(data: AgentQueryRequest): Promise<AgentQueryResponse> {
-    if (this.useMock) {
-      return await mockApiService.queryAgent(data);
-    }
-    
+    // First try the experimental agent service
     try {
-      const response = await this.api.post<AgentQueryResponse>('/query', data);
-      return response.data;
+      if (agentService.isAgentConnected()) {
+        console.log('[ApiService] Using experimental agent service');
+        return await agentService.queryAgent(data);
+      }
     } catch (error) {
-      console.warn('Backend not available, using mock service for queryAgent');
-      return await mockApiService.queryAgent(data);
+      console.warn('[ApiService] Experimental agent service failed, falling back to backend');
     }
+
+    // Fallback to backend API (experimental backend)
+    try {
+      const response = await this.api.post('/query', data);
+      
+      // The experimental backend returns { result: ... } format
+      if (response.data && response.data.result) {
+        return {
+          result: response.data.result
+        };
+      }
+      
+      // Fallback if response format is unexpected
+      return {
+        result: {
+          success: true,
+          data: response.data || 'Query processed successfully',
+          error: null
+        }
+      };
+    } catch (error: any) {
+      console.error('[ApiService] Backend query failed:', error);
+      // Convert technical errors to user-friendly messages
+      let friendlyMessage = 'Query failed. Please try again.';
+      const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+      
+      if (errorMsg.includes('invalid query')) {
+        friendlyMessage = "I didn't understand that. Could you please rephrase your question?";
+      } else if (errorMsg.includes('timeout')) {
+        friendlyMessage = "The request is taking longer than expected. Please try again.";
+      } else if (errorMsg.includes('network')) {
+        friendlyMessage = "I'm having trouble connecting. Please check your internet connection and try again.";
+      }
+      
+      return {
+        result: {
+          success: false,
+          data: friendlyMessage,
+          error: errorMsg
+        }
+      };
+    }
+  }
+
+  // Agent-specific methods
+  async getAgentStatus() {
+    try {
+      return await agentService.getStatus();
+    } catch (error) {
+      console.error('Failed to get agent status:', error);
+      // Return a default status instead of throwing
+      return {
+        isOnline: false,
+        version: '1.0.0',
+        uptime: 0,
+        lastActivity: new Date().toISOString(),
+        activeConnections: 0,
+        services: {
+          vesu: { isActive: false, isHealthy: false, lastCheck: new Date().toISOString() },
+          atomiq: { isActive: false, isHealthy: false, lastCheck: new Date().toISOString() },
+          xverse: { isActive: false, isHealthy: false, lastCheck: new Date().toISOString() },
+          troves: { isActive: false, isHealthy: false, lastCheck: new Date().toISOString() },
+          database: { isActive: false, isHealthy: false, lastCheck: new Date().toISOString() }
+        }
+      };
+    }
+  }
+
+  async getAgentCapabilities() {
+    try {
+      return await agentService.getCapabilities();
+    } catch (error) {
+      console.error('Failed to get agent capabilities:', error);
+      // Return default capabilities instead of throwing
+      return {
+        supportedActions: [],
+        supportedAssets: [],
+        supportedProtocols: [],
+        features: {
+          defi: false,
+          crossChain: false,
+          voiceCommands: false,
+          smartContracts: false,
+          yieldFarming: false,
+          lending: false,
+          borrowing: false,
+          swapping: false
+        },
+        limits: {
+          maxQueryLength: 0,
+          maxConcurrentQueries: 0,
+          rateLimitPerMinute: 0
+        }
+      };
+    }
+  }
+
+  async checkAgentHealth() {
+    try {
+      return await agentService.healthCheck();
+    } catch (error) {
+      console.error('Failed to check agent health:', error);
+      throw error;
+    }
+  }
+
+  async getAgentTools() {
+    try {
+      return await agentService.getTools();
+    } catch (error) {
+      console.error('Failed to get agent tools:', error);
+      return [];
+    }
+  }
+
+  async executeAgentTool(toolName: string, params: any) {
+    try {
+      return await agentService.executeTool(toolName, params);
+    } catch (error) {
+      console.error(`Failed to execute agent tool ${toolName}:`, error);
+      throw error;
+    }
+  }
+
+  async getAgentMemory(userId: string) {
+    try {
+      return await agentService.getMemory(userId);
+    } catch (error) {
+      console.error('Failed to get agent memory:', error);
+      return [];
+    }
+  }
+
+  async clearAgentMemory(userId: string) {
+    try {
+      await agentService.clearMemory(userId);
+    } catch (error) {
+      console.error('Failed to clear agent memory:', error);
+      throw error;
+    }
+  }
+
+  // Chat endpoints
+  async createConversation(title: string, description?: string): Promise<ApiResponse<Conversation>> {
+    const response = await this.api.post<ApiResponse<Conversation>>('/chat/conversations', {
+      title,
+      description,
+    });
+    return response.data;
+  }
+
+  async getConversations(limit?: number): Promise<ApiResponse<Conversation[]>> {
+    const params = limit ? { limit } : {};
+    const response = await this.api.get<ApiResponse<Conversation[]>>('/chat/conversations', { params });
+    return response.data;
+  }
+
+  async getConversation(conversationId: string): Promise<ApiResponse<Conversation>> {
+    const response = await this.api.get<ApiResponse<Conversation>>(`/chat/conversations/${conversationId}`);
+    return response.data;
+  }
+
+  async updateConversation(conversationId: string, data: { title?: string; description?: string; isActive?: boolean }): Promise<ApiResponse<Conversation>> {
+    const response = await this.api.put<ApiResponse<Conversation>>(`/chat/conversations/${conversationId}`, data);
+    return response.data;
+  }
+
+  async deleteConversation(conversationId: string): Promise<ApiResponse<{ message: string }>> {
+    const response = await this.api.delete<ApiResponse<{ message: string }>>(`/chat/conversations/${conversationId}`);
+    return response.data;
+  }
+
+  async createMessage(conversationId: string, role: 'user' | 'agent', content: string, metadata?: any): Promise<ApiResponse<ChatMessage>> {
+    const response = await this.api.post<ApiResponse<ChatMessage>>('/chat/messages', {
+      conversationId,
+      role,
+      content,
+      metadata,
+    });
+    return response.data;
+  }
+
+  async getMessages(conversationId: string, limit?: number): Promise<ApiResponse<ChatMessage[]>> {
+    const params = limit ? { limit } : {};
+    const response = await this.api.get<ApiResponse<ChatMessage[]>>(`/chat/conversations/${conversationId}/messages`, { params });
+    return response.data;
+  }
+
+  async getRecentMessages(limit?: number): Promise<ApiResponse<ChatMessage[]>> {
+    const params = limit ? { limit } : {};
+    const response = await this.api.get<ApiResponse<ChatMessage[]>>('/chat/messages/recent', { params });
+    return response.data;
+  }
+
+  async updateMessage(messageId: string, content: string): Promise<ApiResponse<ChatMessage>> {
+    const response = await this.api.put<ApiResponse<ChatMessage>>(`/chat/messages/${messageId}`, { content });
+    return response.data;
+  }
+
+  async deleteMessage(messageId: string): Promise<ApiResponse<{ message: string }>> {
+    const response = await this.api.delete<ApiResponse<{ message: string }>>(`/chat/messages/${messageId}`);
+    return response.data;
+  }
+
+  async getOrCreateActiveConversation(): Promise<ApiResponse<Conversation>> {
+    const response = await this.api.get<ApiResponse<Conversation>>('/chat/conversations/active');
+    return response.data;
+  }
+
+  async getConversationStats(): Promise<ApiResponse<{ totalConversations: number; totalMessages: number; activeConversations: number }>> {
+    const response = await this.api.get<ApiResponse<{ totalConversations: number; totalMessages: number; activeConversations: number }>>('/chat/stats');
+    return response.data;
   }
 
   // Generic request method for custom endpoints

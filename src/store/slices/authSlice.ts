@@ -111,6 +111,22 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+export const googleAuth = createAsyncThunk(
+  'auth/googleAuth',
+  async (token: string, { rejectWithValue }) => {
+    try {
+      const response = await apiService.googleAuth(token);
+      if (response.success) {
+        return response.data;
+      } else {
+        return rejectWithValue(response.message || 'Google authentication failed');
+      }
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Google authentication failed');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -129,12 +145,20 @@ const authSlice = createSlice({
       state.error = null;
     },
     initializeAuth: (state) => {
-      // Load token from localStorage on app initialization
+      // Load token and user data from localStorage on app initialization
       if (typeof window !== 'undefined') {
         const token = localStorage.getItem('auth_token');
-        if (token) {
-          state.token = token;
-          state.isAuthenticated = true;
+        const userData = localStorage.getItem('user_data');
+        if (token && userData) {
+          try {
+            state.token = token;
+            state.user = JSON.parse(userData);
+            state.isAuthenticated = true;
+          } catch (error) {
+            // If parsing fails, clear the data
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_data');
+          }
         }
       }
     },
@@ -152,6 +176,11 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
+        // Save to localStorage for persistence
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', action.payload.token);
+          localStorage.setItem('user_data', JSON.stringify(action.payload.user));
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -169,6 +198,11 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
+        // Save to localStorage for persistence
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', action.payload.token);
+          localStorage.setItem('user_data', JSON.stringify(action.payload.user));
+        }
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -181,6 +215,11 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.error = null;
+        // Clear localStorage on logout
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user_data');
+        }
       })
       // Load User
       .addCase(loadUser.pending, (state) => {
@@ -223,9 +262,27 @@ const authSlice = createSlice({
       .addCase(changePassword.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // Google Auth
+      .addCase(googleAuth.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(googleAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+        state.error = null;
+      })
+      .addCase(googleAuth.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+        state.isAuthenticated = false;
       });
   },
 });
 
 export const { clearError, setToken, clearAuth, initializeAuth } = authSlice.actions;
+export { login, register, logout, loadUser, updateProfile, changePassword, googleAuth };
 export default authSlice.reducer;

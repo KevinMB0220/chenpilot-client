@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { 
   ArrowRight
 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Home() {
   const router = useRouter();
@@ -48,6 +49,14 @@ export default function Home() {
     'Create a contact for 0x123...abc',
     'What is my current wallet balance?',
     'Show me my recent transactions',
+  ];
+
+  const logos = [
+    { name: 'Starknet', src: '/starknet.jpg', alt: 'Starknet Logo' },
+    { name: 'Vesu', src: '/vesu.jpg', alt: 'Vesu Logo' },
+    { name: 'Atomiq', src: '/atomiq.jpg', alt: 'Atomiq Logo' },
+    { name: 'Troves', src: '/troves.jpg', alt: 'Troves Logo' },
+    { name: 'Xverse', src: '/xverse.jpg', alt: 'Xverse Logo' },
   ];
 
   return (
@@ -167,6 +176,43 @@ export default function Home() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        {/* Partners/Logos Section */}
+        <section className="py-20 bg-gray-900/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="text-gray-300">
+                  Trusted by Leading
+                </span>
+                <br />
+                <span className="text-purple-400">
+                  DeFi Platforms
+                </span>
+              </h2>
+              <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+                Integrated with the most innovative protocols in the ecosystem
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 items-center justify-items-center">
+              {logos.map((logo, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-center"
+                >
+                  <Image
+                    src={logo.src}
+                    alt={logo.alt}
+                    width={160}
+                    height={160}
+                    className="w-32 h-32 object-cover rounded-full"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </section>

@@ -5,11 +5,14 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { logout } from '@/store/slices/authSlice';
 import { toggleTheme } from '@/store/slices/uiSlice';
+import { clearMessages, startNewChat, loadChatHistory, deleteChatHistory } from '@/store/slices/chatSlice';
 import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 import { 
   X,
-  Menu
+  Menu,
+  PanelLeft,
+  Plus
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -27,14 +30,28 @@ export function ChatLayout({ children }: ChatLayoutProps) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Mock chat history data
-  const chatHistory = [
-    { id: '1', title: 'How to deploy my account?', timestamp: '2 hours ago' },
-    { id: '2', title: 'What is my wallet balance?', timestamp: '1 day ago' },
-    { id: '3', title: 'Create a new contact', timestamp: '2 days ago' },
-    { id: '4', title: 'Explain Starknet features', timestamp: '3 days ago' },
-    { id: '5', title: 'How to fund my account?', timestamp: '1 week ago' },
-  ];
+  // Get chat history from Redux store
+  const { chatHistory, currentConversation } = useAppSelector((state) => state.chat);
+  
+  // Convert chat history object to array for display
+  const chatHistoryList = React.useMemo(() => {
+    return Object.entries(chatHistory).map(([conversationId, messages]) => {
+      const lastMessage = messages[messages.length - 1];
+      const firstUserMessage = messages.find(msg => msg.type === 'user');
+      return {
+        id: conversationId,
+        title: firstUserMessage ? 
+          (firstUserMessage.content.length > 50 ? 
+            firstUserMessage.content.substring(0, 50) + '...' : 
+            firstUserMessage.content) : 
+          'New Chat',
+        lastMessage: lastMessage?.content || '',
+        timestamp: lastMessage?.timestamp || new Date().toISOString(),
+        messageCount: messages.length,
+      };
+    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 10); // Show last 10 conversations
+  }, [chatHistory]);
 
   const profileMenuItems = [
     {
@@ -52,8 +69,24 @@ export function ChatLayout({ children }: ChatLayoutProps) {
   ];
 
   const handleNewChat = () => {
+    // Start new chat - this will save current conversation and clear messages
+    dispatch(startNewChat());
+    toast.success('Starting new chat...');
     router.push('/chat');
     setSidebarOpen(false);
+  };
+
+  const handleLoadChat = (conversationId: string) => {
+    // Load chat history for the selected conversation
+    dispatch(loadChatHistory(conversationId));
+    router.push('/chat');
+    setSidebarOpen(false);
+  };
+
+  const handleDeleteChat = (conversationId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    dispatch(deleteChatHistory(conversationId));
+    toast.success('Chat deleted');
   };
 
   const handleNavigation = (href: string) => {
@@ -95,26 +128,41 @@ export function ChatLayout({ children }: ChatLayoutProps) {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 bg-gray-900 shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        "fixed inset-y-0 left-0 z-50 bg-[#2D1B69] shadow-lg transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
         sidebarCollapsed ? "w-16" : "w-72"
       )}>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-700">
-            <button 
-              onClick={toggleSidebar}
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
+            <div className="flex items-center space-x-2">
               {sidebarCollapsed ? (
-                <Menu className="h-6 w-6 text-purple-400" />
+                <button 
+                  onClick={toggleSidebar}
+                  className="flex items-center hover:opacity-80 transition-opacity"
+                  title="Expand sidebar"
+                >
+                  <Menu className="h-6 w-6 text-[#C4B5FD]" />
+                </button>
               ) : (
-                <span className="text-xl font-bold text-purple-400">
+                <span className="text-xl font-bold text-[#C4B5FD] tracking-tight">
                   ChenPilot
                 </span>
               )}
-            </button>
+            </div>
+            
+            {!sidebarCollapsed && (
+  <div className="absolute top-4 right-4">
+    <button
+      onClick={toggleSidebar}
+      className="p-2 text-[#C4B5FD] hover:bg-gray-800/50 rounded transition-colors"
+      title="Collapse sidebar"
+    >
+      <PanelLeft className="h-6 w-6" />
+    </button>
+  </div>
+)}
+
             <div className="flex items-center space-x-2">
               <Button
                 variant="ghost"
@@ -132,45 +180,62 @@ export function ChatLayout({ children }: ChatLayoutProps) {
             <Button
               onClick={handleNewChat}
               className={cn(
-                "w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl",
+                "w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-medium py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl",
                 sidebarCollapsed ? "px-3" : "px-4"
               )}
             >
-              {!sidebarCollapsed && <span>New Chat</span>}
+              {sidebarCollapsed ? (
+                <Plus className="h-5 w-5" />
+              ) : (
+                <span>New Chat</span>
+              )}
             </Button>
           </div>
 
           {/* Chat History */}
           <div className="flex-1 overflow-y-auto px-4">
-            <div className="space-y-2">
+            <div className="space-y-1">
               {!sidebarCollapsed && (
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  Recent Chats
+                <h3 className="text-sm font-medium text-white mb-3">
+                  Recent
                 </h3>
               )}
-              {chatHistory.map((chat) => (
-                <button
+              {chatHistoryList.map((chat) => (
+                <div
                   key={chat.id}
-                  onClick={() => handleNavigation('/chat')}
                   className={cn(
-                    "w-full text-left rounded-xl hover:bg-gray-800/50 transition-all duration-200 group border border-transparent hover:border-gray-700",
-                    sidebarCollapsed ? "p-2" : "p-3"
+                    "w-full rounded-lg hover:bg-gray-800/50 transition-all duration-200 group relative",
+                    sidebarCollapsed ? "p-1" : "p-2"
                   )}
-                  title={sidebarCollapsed ? chat.title : undefined}
                 >
-                  <div className="flex items-start space-x-3">
-                    {!sidebarCollapsed && (
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-200 group-hover:text-white transition-colors truncate">
-                          {chat.title}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {chat.timestamp}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </button>
+                  <button
+                    onClick={() => handleLoadChat(chat.id)}
+                    className="w-full text-left"
+                    title={sidebarCollapsed ? chat.title : undefined}
+                  >
+                    <div className="flex items-start space-x-2">
+                      {!sidebarCollapsed && (
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white group-hover:text-gray-200 transition-colors truncate">
+                            {chat.title}
+                          </p>
+                          <p className="text-xs text-gray-400 truncate">
+                            {chat.messageCount} messages
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                  {!sidebarCollapsed && (
+                    <button
+                      onClick={(e) => handleDeleteChat(chat.id, e)}
+                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 p-1"
+                      title="Delete chat"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -181,19 +246,24 @@ export function ChatLayout({ children }: ChatLayoutProps) {
               <button
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                 className={cn(
-                  "w-full flex items-center rounded-xl hover:bg-gray-800/50 transition-all duration-200 border border-transparent hover:border-gray-700",
+                  "w-full flex items-center rounded-xl hover:bg-gray-800/50 transition-all duration-200",
                   sidebarCollapsed ? "justify-center p-2" : "justify-between p-3"
                 )}
                 title={sidebarCollapsed ? user?.name || user?.email : undefined}
               >
                 <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
                   {!sidebarCollapsed && (
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-medium text-white truncate">
-                        {user?.name || user?.email}
+                        {user?.name || 'Test User'}
                       </p>
                       <p className="text-xs text-gray-400 truncate">
-                        {user?.email}
+                        {user?.email || 'test@example.com'}
                       </p>
                     </div>
                   )}
@@ -239,6 +309,20 @@ export function ChatLayout({ children }: ChatLayoutProps) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile header with menu button */}
+        <div className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 transition-colors"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+            ChenPilot
+          </h1>
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+        
         {/* Page content */}
         <main className="flex-1 overflow-hidden">
           {children}
