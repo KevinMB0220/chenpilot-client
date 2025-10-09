@@ -196,15 +196,15 @@ export function ChatLayout({ children }: ChatLayoutProps) {
           <div className="flex-1 overflow-y-auto px-4">
             <div className="space-y-1">
               {!sidebarCollapsed && (
-                <h3 className="text-sm font-medium text-white mb-3">
-                  Recent
+                <h3 className="text-sm font-medium text-gray-300 mb-3 px-2">
+                  Recents
                 </h3>
               )}
               {chatHistoryList.map((chat) => (
                 <div
                   key={chat.id}
                   className={cn(
-                    "w-full rounded-lg hover:bg-gray-800/50 transition-all duration-200 group relative",
+                    "w-full rounded-lg hover:bg-gray-800/30 transition-all duration-200 group relative",
                     sidebarCollapsed ? "p-1" : "p-2"
                   )}
                 >
@@ -216,11 +216,8 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                     <div className="flex items-start space-x-2">
                       {!sidebarCollapsed && (
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white group-hover:text-gray-200 transition-colors truncate">
+                          <p className="text-sm text-gray-200 group-hover:text-white transition-colors truncate leading-relaxed">
                             {chat.title}
-                          </p>
-                          <p className="text-xs text-gray-400 truncate">
-                            {chat.messageCount} messages
                           </p>
                         </div>
                       )}
@@ -229,7 +226,7 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                   {!sidebarCollapsed && (
                     <button
                       onClick={(e) => handleDeleteChat(chat.id, e)}
-                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400 p-1"
+                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400 p-1 rounded"
                       title="Delete chat"
                     >
                       <X className="h-3 w-3" />

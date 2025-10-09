@@ -24,7 +24,8 @@ import {
   Zap,
   DollarSign,
   Bitcoin,
-  Building2
+  Building2,
+  Sun
 } from 'lucide-react';
 import { formatRelativeTime } from '@/utils/format';
 import toast from 'react-hot-toast';
@@ -180,8 +181,19 @@ export default function ChatPage() {
           <div className="flex-1 overflow-y-auto">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-8">
+                {/* Greeting Message */}
+                <div className="text-center mb-8">
+                  <div className="flex items-center justify-center mb-4">
+                    <Sun className="h-8 w-8 text-orange-400 mr-3" />
+                    <h2 className="text-2xl font-light text-white">
+                      Happy {new Date().toLocaleDateString('en-US', { weekday: 'long' })}, {user?.name || 'User'}
+                    </h2>
+                  </div>
+                  <p className="text-lg text-gray-300">What can we do today?</p>
+                </div>
+
                 {/* Chat Input in Middle */}
-                <div className="w-full max-w-3xl">
+                <div className="w-full max-w-3xl mb-8">
                   <div className="relative bg-[#1A1A2E] rounded-2xl p-6">
                     <input
                       ref={inputRef}
@@ -287,6 +299,28 @@ export default function ChatPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                {/* Sample Questions */}
+                <div className="w-full max-w-2xl">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {[
+                      "Check wallet balance",
+                      "Recent transactions",
+                      "Deploy Starknet account",
+                      "Create contact",
+                      "Swap sats to STRK",
+                      "Bitcoin price"
+                    ].map((question, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setInputValue(question)}
+                        className="text-left px-3 py-2 bg-transparent border border-gray-600/30 rounded-lg hover:border-gray-500/50 transition-all duration-200 text-gray-300 hover:text-white"
+                      >
+                        <span className="text-xs font-medium">{question}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

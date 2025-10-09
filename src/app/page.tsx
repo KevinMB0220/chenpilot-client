@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppSelector } from '@/store';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { 
   ArrowRight
@@ -11,7 +11,7 @@ import Image from 'next/image';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, isClient } = useAuth();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -94,7 +94,14 @@ export default function Home() {
                 </a>
               </div>
               
-              {isAuthenticated ? (
+              {!isClient ? (
+                <Button
+                  onClick={() => router.push('/auth/login')}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Get Started
+                </Button>
+              ) : isAuthenticated ? (
                 <Button
                   onClick={() => router.push('/chat')}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
@@ -135,7 +142,7 @@ export default function Home() {
 
             <div className="flex justify-center items-center">
               <Button
-                onClick={() => router.push(isAuthenticated ? '/chat' : '/auth/login')}
+                onClick={() => router.push(isClient && isAuthenticated ? '/chat' : '/auth/login')}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold rounded-xl"
               >
                 Get Started
@@ -265,7 +272,7 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
-                onClick={() => router.push(isAuthenticated ? '/chat' : '/auth/login')}
+                onClick={() => router.push(isClient && isAuthenticated ? '/chat' : '/auth/login')}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl"
               >
                 Start Chatting Now
