@@ -259,6 +259,7 @@ class ApiService {
         // Contact endpoints not available in experimental backend
         return {
           success: false,
+          status: 404,
           message: 'Contact creation is available through the chat interface. Try: "Add John as a contact with address 0x123..."'
         };
       }
@@ -275,6 +276,7 @@ class ApiService {
         // Contact endpoints not available in experimental backend
         return {
           success: false,
+          status: 404,
           message: 'Contact updates are available through the chat interface'
         };
       }
@@ -291,6 +293,7 @@ class ApiService {
         // Contact endpoints not available in experimental backend
         return {
           success: false,
+          status: 404,
           message: 'Contact deletion is available through the chat interface. Try: "Remove John from my contacts"'
         };
       }
@@ -326,7 +329,7 @@ class ApiService {
         result: {
           success: true,
           data: response.data || 'Query processed successfully',
-          error: null
+          error: undefined
         }
       };
     } catch (error: any) {
@@ -451,72 +454,10 @@ class ApiService {
     }
   }
 
-  // Chat endpoints
-  async createConversation(title: string, description?: string): Promise<ApiResponse<Conversation>> {
-    const response = await this.api.post<ApiResponse<Conversation>>('/chat/conversations', {
-      title,
-      description,
-    });
-    return response.data;
-  }
+  // Chat endpoints - Removed server-side conversation management
+  // All conversation and message management is now handled client-side
 
-  async getConversations(limit?: number): Promise<ApiResponse<Conversation[]>> {
-    const params = limit ? { limit } : {};
-    const response = await this.api.get<ApiResponse<Conversation[]>>('/chat/conversations', { params });
-    return response.data;
-  }
-
-  async getConversation(conversationId: string): Promise<ApiResponse<Conversation>> {
-    const response = await this.api.get<ApiResponse<Conversation>>(`/chat/conversations/${conversationId}`);
-    return response.data;
-  }
-
-  async updateConversation(conversationId: string, data: { title?: string; description?: string; isActive?: boolean }): Promise<ApiResponse<Conversation>> {
-    const response = await this.api.put<ApiResponse<Conversation>>(`/chat/conversations/${conversationId}`, data);
-    return response.data;
-  }
-
-  async deleteConversation(conversationId: string): Promise<ApiResponse<{ message: string }>> {
-    const response = await this.api.delete<ApiResponse<{ message: string }>>(`/chat/conversations/${conversationId}`);
-    return response.data;
-  }
-
-  async createMessage(conversationId: string, role: 'user' | 'agent', content: string, metadata?: any): Promise<ApiResponse<ChatMessage>> {
-    const response = await this.api.post<ApiResponse<ChatMessage>>('/chat/messages', {
-      conversationId,
-      role,
-      content,
-      metadata,
-    });
-    return response.data;
-  }
-
-  async getMessages(conversationId: string, limit?: number): Promise<ApiResponse<ChatMessage[]>> {
-    const params = limit ? { limit } : {};
-    const response = await this.api.get<ApiResponse<ChatMessage[]>>(`/chat/conversations/${conversationId}/messages`, { params });
-    return response.data;
-  }
-
-  async getRecentMessages(limit?: number): Promise<ApiResponse<ChatMessage[]>> {
-    const params = limit ? { limit } : {};
-    const response = await this.api.get<ApiResponse<ChatMessage[]>>('/chat/messages/recent', { params });
-    return response.data;
-  }
-
-  async updateMessage(messageId: string, content: string): Promise<ApiResponse<ChatMessage>> {
-    const response = await this.api.put<ApiResponse<ChatMessage>>(`/chat/messages/${messageId}`, { content });
-    return response.data;
-  }
-
-  async deleteMessage(messageId: string): Promise<ApiResponse<{ message: string }>> {
-    const response = await this.api.delete<ApiResponse<{ message: string }>>(`/chat/messages/${messageId}`);
-    return response.data;
-  }
-
-  async getOrCreateActiveConversation(): Promise<ApiResponse<Conversation>> {
-    const response = await this.api.get<ApiResponse<Conversation>>('/chat/conversations/active');
-    return response.data;
-  }
+  // Removed: getOrCreateActiveConversation - now handled client-side
 
   async getConversationStats(): Promise<ApiResponse<{ totalConversations: number; totalMessages: number; activeConversations: number }>> {
     const response = await this.api.get<ApiResponse<{ totalConversations: number; totalMessages: number; activeConversations: number }>>('/chat/stats');

@@ -135,14 +135,32 @@ export interface AgentQueryResponse {
 export interface ChatMessage {
   id: string;
   type: 'user' | 'agent' | 'system';
-  content: string;
+  content: string | object;
   timestamp: string;
   metadata?: {
     transactionHash?: string;
     amount?: string;
     tokenType?: string;
     status?: 'pending' | 'success' | 'failed';
+    success?: boolean;
+    error?: string;
+    type?: string;
+    action?: string;
+    asset?: string;
+    requiresConfirmation?: boolean;
   };
+}
+
+export interface Conversation {
+  id: string;
+  title: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  messageCount: number;
+  messages?: ChatMessage[];
 }
 
 // API Response Types

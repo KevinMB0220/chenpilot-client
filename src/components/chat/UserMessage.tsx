@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ChatMessage } from '@/types';
 import { Copy, Check, Edit2, Check as CheckIcon, X } from 'lucide-react';
 
@@ -13,10 +15,10 @@ interface UserMessageProps {
 export default function UserMessage({ message, onCopy, onEdit }: UserMessageProps) {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(message.content as string);
+  const [editContent, setEditContent] = useState(typeof message.content === 'string' ? message.content : JSON.stringify(message.content));
 
   const handleCopy = async () => {
-    const content = message.content as string;
+    const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
     try {
       await navigator.clipboard.writeText(content);
       setCopied(true);
@@ -31,7 +33,7 @@ export default function UserMessage({ message, onCopy, onEdit }: UserMessageProp
 
   const handleEdit = () => {
     setIsEditing(true);
-    setEditContent(message.content as string);
+    setEditContent(typeof message.content === 'string' ? message.content : JSON.stringify(message.content));
   };
 
   const handleSaveEdit = () => {
@@ -43,7 +45,7 @@ export default function UserMessage({ message, onCopy, onEdit }: UserMessageProp
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditContent(message.content as string);
+    setEditContent(typeof message.content === 'string' ? message.content : JSON.stringify(message.content));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -86,9 +88,23 @@ export default function UserMessage({ message, onCopy, onEdit }: UserMessageProp
         </div>
       ) : (
         <>
-          <p className="whitespace-pre-wrap leading-relaxed text-lg pr-12">
-            {message.content}
-          </p>
+          <div className="prose prose-invert prose-lg max-w-none leading-relaxed pr-12">
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children, ...props }: any) => <p className="mb-2 last:mb-0" {...props}>{children}</p>,
+                strong: ({ children, ...props }: any) => <strong className="font-semibold text-white" {...props}>{children}</strong>,
+                em: ({ children, ...props }: any) => <em className="italic text-gray-200" {...props}>{children}</em>,
+                code: ({ children, ...props }: any) => <code className="bg-gray-800 text-green-400 px-1 py-0.5 rounded text-sm" {...props}>{children}</code>,
+                pre: ({ children, ...props }: any) => <pre className="bg-gray-900 text-gray-100 p-3 rounded-lg overflow-x-auto my-2" {...props}>{children}</pre>,
+                ul: ({ children, ...props }: any) => <ul className="list-disc list-inside mb-2 space-y-1" {...props}>{children}</ul>,
+                ol: ({ children, ...props }: any) => <ol className="list-decimal list-inside mb-2 space-y-1" {...props}>{children}</ol>,
+                li: ({ children, ...props }: any) => <li className="text-gray-200" {...props}>{children}</li>,
+              }}
+            >
+              {typeof message.content === 'string' ? message.content : JSON.stringify(message.content, null, 2)}
+            </ReactMarkdown>
+          </div>
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
             <button
               onClick={handleCopy}

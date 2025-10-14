@@ -34,66 +34,35 @@ const initialState: ChatState = {
 };
 
 // Async thunks
-export const loadConversations = createAsyncThunk(
-  'chat/loadConversations',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await apiService.getConversations(50);
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to load conversations');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to load conversations');
-    }
-  }
-);
-
-export const loadConversation = createAsyncThunk(
-  'chat/loadConversation',
-  async (conversationId: string, { rejectWithValue }) => {
-    try {
-      const response = await apiService.getConversation(conversationId);
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to load conversation');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to load conversation');
-    }
-  }
-);
-
-export const createConversation = createAsyncThunk(
-  'chat/createConversation',
-  async ({ title, description }: { title: string; description?: string }, { rejectWithValue }) => {
-    try {
-      const response = await apiService.createConversation(title, description);
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to create conversation');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create conversation');
-    }
-  }
-);
+// Removed server-side conversation thunks - now handled client-side
 
 export const getOrCreateActiveConversation = createAsyncThunk(
   'chat/getOrCreateActiveConversation',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
-      const response = await apiService.getOrCreateActiveConversation();
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to get/create active conversation');
+      const state = getState() as any;
+      const currentConversation = state.chat.currentConversation;
+      
+      // If we already have an active conversation, return it
+      if (currentConversation) {
+        return currentConversation;
       }
+      
+      // Create a new conversation locally
+      const newConversation: Conversation = {
+        id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        title: 'New Chat',
+        description: 'A new conversation',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: state.auth.user?.id || 'anonymous',
+        messageCount: 0
+      };
+      
+      return newConversation;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get/create active conversation');
+      return rejectWithValue('Failed to create conversation');
     }
   }
 );
@@ -110,27 +79,29 @@ export const sendMessage = createAsyncThunk(
         return rejectWithValue('User not authenticated');
       }
 
-      // Get or create active conversation
+      // Get or create active conversation locally
       let conversation = currentConversation;
       if (!conversation) {
-        const convResponse = await apiService.getOrCreateActiveConversation();
-        if (convResponse.success) {
-          conversation = convResponse.data;
-        } else {
-          return rejectWithValue('Failed to get/create conversation');
-        }
+        // Create a new conversation locally
+        conversation = {
+          id: `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          title: 'New Chat',
+          description: 'A new conversation',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          userId: userId,
+          messageCount: 0
+        };
       }
 
-      // Save user message to database
-      const userMessageResponse = await apiService.createMessage(
-        conversation.id,
-        'user',
-        query
-      );
-
-      if (!userMessageResponse.success) {
-        return rejectWithValue('Failed to save user message');
-      }
+      // Save user message locally (no server call needed)
+      const userMessage: ChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'user',
+        content: query,
+        timestamp: new Date().toISOString(),
+      };
 
       // Send query to agent
       const request: AgentQueryRequest = {
@@ -140,26 +111,25 @@ export const sendMessage = createAsyncThunk(
 
       const response = await apiService.queryAgent(request);
       
-      // Save agent response to database
-      if (response.result.success) {
-        await apiService.createMessage(
-          conversation.id,
-          'agent',
-          response.result.data,
-          {
-            success: response.result.success,
-            error: response.result.error,
-            transactionHash: response.result.transactionHash,
-            type: response.result.metadata?.type,
-            action: response.result.metadata?.action,
-            amount: response.result.metadata?.amount,
-            asset: response.result.metadata?.asset,
-            requiresConfirmation: response.result.metadata?.requiresConfirmation,
-          }
-        );
-      }
+      // Save agent response locally (no server call needed)
+      const agentMessage: ChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: 'agent',
+        content: response.result.data,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          success: response.result.success,
+          error: response.result.error,
+          transactionHash: (response.result as any).transactionHash,
+          type: (response.result as any).metadata?.type,
+          action: (response.result as any).metadata?.action,
+          amount: (response.result as any).metadata?.amount,
+          asset: (response.result as any).metadata?.asset,
+          requiresConfirmation: (response.result as any).metadata?.requiresConfirmation,
+        }
+      };
 
-      return { response, conversation };
+      return { response, conversation, userMessage, agentMessage };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to send message');
     }
@@ -276,56 +246,43 @@ const chatSlice = createSlice({
         }
       }
     },
+    saveConversationLocally: (state, action: PayloadAction<Conversation>) => {
+      const conversation = action.payload;
+      state.conversations.unshift(conversation);
+      
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        const conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
+        conversations.unshift(conversation);
+        localStorage.setItem('conversations', JSON.stringify(conversations));
+      }
+    },
+    loadConversationsLocally: (state) => {
+      if (typeof window !== 'undefined') {
+        const conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
+        state.conversations = conversations;
+      }
+    },
+    deleteConversationLocally: (state, action: PayloadAction<string>) => {
+      const conversationId = action.payload;
+      state.conversations = state.conversations.filter(conv => conv.id !== conversationId);
+      delete state.chatHistory[conversationId];
+      
+      // Update localStorage
+      if (typeof window !== 'undefined') {
+        const conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
+        const updatedConversations = conversations.filter((conv: Conversation) => conv.id !== conversationId);
+        localStorage.setItem('conversations', JSON.stringify(updatedConversations));
+        
+        const chatHistory = JSON.parse(localStorage.getItem('chat_history') || '{}');
+        delete chatHistory[conversationId];
+        localStorage.setItem('chat_history', JSON.stringify(chatHistory));
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Load Conversations
-      .addCase(loadConversations.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(loadConversations.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.conversations = action.payload;
-        state.error = null;
-      })
-      .addCase(loadConversations.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-      
-      // Load Conversation
-      .addCase(loadConversation.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(loadConversation.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.currentConversation = action.payload;
-        state.messages = action.payload.messages || [];
-        state.error = null;
-      })
-      .addCase(loadConversation.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-      
-      // Create Conversation
-      .addCase(createConversation.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(createConversation.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.conversations.unshift(action.payload);
-        state.currentConversation = action.payload;
-        state.messages = [];
-        state.error = null;
-      })
-      .addCase(createConversation.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
+      // Removed server conversation extraReducers - now handled client-side
       
       // Get or Create Active Conversation
       .addCase(getOrCreateActiveConversation.pending, (state) => {
@@ -354,24 +311,40 @@ const chatSlice = createSlice({
         state.isTyping = false;
         state.currentConversation = action.payload.conversation;
         
-        // Add agent response message with enhanced metadata
-        const agentMessage: ChatMessage = {
-          id: Date.now().toString(),
-          type: 'agent',
-          content: action.payload.response.result.data,
-          timestamp: new Date().toISOString(),
-          metadata: {
-            success: action.payload.response.result.success,
-            error: action.payload.response.result.error,
-            transactionHash: action.payload.response.result.transactionHash,
-            type: action.payload.response.result.metadata?.type,
-            action: action.payload.response.result.metadata?.action,
-            amount: action.payload.response.result.metadata?.amount,
-            asset: action.payload.response.result.metadata?.asset,
-            requiresConfirmation: action.payload.response.result.metadata?.requiresConfirmation,
-          },
-        };
-        state.messages.push(agentMessage);
+        // Debug logging to see what the server is returning
+        console.log('[ChatSlice] Full response:', action.payload.response);
+        console.log('[ChatSlice] Response result:', action.payload.response.result);
+        console.log('[ChatSlice] Response data:', action.payload.response.result.data);
+        
+        // Handle different response formats
+        let content = action.payload.response.result.data;
+        
+        // If the response data is an object with structured data, use it directly
+        if (typeof content === 'object' && content !== null) {
+          // The content is already structured, use it as is
+          console.log('[ChatSlice] Using structured content:', content);
+        } else if (typeof content === 'string') {
+          // Try to parse if it's a JSON string
+          try {
+            const parsed = JSON.parse(content);
+            if (typeof parsed === 'object' && parsed !== null) {
+              content = parsed;
+              console.log('[ChatSlice] Parsed JSON content:', content);
+            }
+          } catch (e) {
+            // Not JSON, use as string
+            console.log('[ChatSlice] Using string content:', content);
+          }
+        }
+        
+        // Add both user and agent messages from the payload
+        if (action.payload.userMessage) {
+          state.messages.push(action.payload.userMessage);
+        }
+        
+        if (action.payload.agentMessage) {
+          state.messages.push(action.payload.agentMessage);
+        }
         
         // Save chat history after each message
         if (state.currentConversation) {
@@ -437,5 +410,8 @@ export const {
   saveChatHistory,
   deleteChatHistory,
   initializeChatHistory,
+  saveConversationLocally,
+  loadConversationsLocally,
+  deleteConversationLocally,
 } = chatSlice.actions;
 export default chatSlice.reducer;
