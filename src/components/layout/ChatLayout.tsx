@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { logout } from '@/store/slices/authSlice';
 import { toggleTheme } from '@/store/slices/uiSlice';
-import { clearMessages, startNewChat, loadChatHistory, deleteChatHistory } from '@/store/slices/chatSlice';
+import { clearMessages, startNewChat, loadChatHistory, deleteChatHistory, loadConversationsLocally, deleteConversationLocally } from '@/store/slices/chatSlice';
 import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
 import { 
@@ -15,6 +15,7 @@ import {
   Plus
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import Image from 'next/image';
 
 interface ChatLayoutProps {
   children: React.ReactNode;
@@ -41,11 +42,11 @@ export function ChatLayout({ children }: ChatLayoutProps) {
       return {
         id: conversationId,
         title: firstUserMessage ? 
-          (firstUserMessage.content.length > 50 ? 
+          (typeof firstUserMessage.content === 'string' && firstUserMessage.content.length > 50 ? 
             firstUserMessage.content.substring(0, 50) + '...' : 
-            firstUserMessage.content) : 
+            typeof firstUserMessage.content === 'string' ? firstUserMessage.content : 'New Chat') : 
           'New Chat',
-        lastMessage: lastMessage?.content || '',
+        lastMessage: typeof lastMessage?.content === 'string' ? lastMessage.content : '',
         timestamp: lastMessage?.timestamp || new Date().toISOString(),
         messageCount: messages.length,
       };
@@ -85,7 +86,7 @@ export function ChatLayout({ children }: ChatLayoutProps) {
 
   const handleDeleteChat = (conversationId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    dispatch(deleteChatHistory(conversationId));
+    dispatch(deleteConversationLocally(conversationId));
     toast.success('Chat deleted');
   };
 
@@ -109,6 +110,11 @@ export function ChatLayout({ children }: ChatLayoutProps) {
   const handleThemeToggle = () => {
     dispatch(toggleTheme());
   };
+
+  // Load conversations from localStorage on component mount
+  React.useEffect(() => {
+    dispatch(loadConversationsLocally());
+  }, [dispatch]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -145,9 +151,20 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                   <Menu className="h-6 w-6 text-[#C4B5FD]" />
                 </button>
               ) : (
-                <span className="text-xl font-bold text-[#C4B5FD] tracking-tight">
-                  ChenPilot
-                </span>
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <Image
+                      src="/chenpilot.png"
+                      alt="ChenPilot Logo"
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
+                  </div>
+                  <span className="text-xl font-thin text-[#C4B5FD] tracking-tight" style={{ fontFamily: 'Manrope' }}>
+                    ChenPilot
+                  </span>
+                </div>
               )}
             </div>
             
@@ -211,13 +228,13 @@ export function ChatLayout({ children }: ChatLayoutProps) {
                   <button
                     onClick={() => handleLoadChat(chat.id)}
                     className="w-full text-left"
-                    title={sidebarCollapsed ? chat.title : undefined}
+                    title={sidebarCollapsed ? (typeof chat.title === 'string' ? chat.title : 'Chat') : undefined}
                   >
                     <div className="flex items-start space-x-2">
                       {!sidebarCollapsed && (
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-200 group-hover:text-white transition-colors truncate leading-relaxed">
-                            {chat.title}
+                            {typeof chat.title === 'string' ? chat.title : 'Chat'}
                           </p>
                         </div>
                       )}
@@ -314,9 +331,20 @@ export function ChatLayout({ children }: ChatLayoutProps) {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            ChenPilot
-          </h1>
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <Image
+                src="/chenpilot.png"
+                alt="ChenPilot Logo"
+                width={24}
+                height={24}
+                className="rounded-full object-cover"
+              />
+            </div>
+            <h1 className="text-lg font-thin text-gray-900 dark:text-white" style={{ fontFamily: 'Manrope' }}>
+              ChenPilot
+            </h1>
+          </div>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
         

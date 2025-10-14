@@ -87,7 +87,7 @@ export default function ChatHistoryPage() {
                             </p>
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                            {message.content}
+                            {typeof message.content === 'string' ? message.content : JSON.stringify(message.content, null, 2)}
                           </p>
                           {message.metadata && (
                             <div className="mt-1 flex flex-wrap gap-1">

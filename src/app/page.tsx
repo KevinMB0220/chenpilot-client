@@ -71,8 +71,17 @@ export default function Home() {
       <header className="relative z-10 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-purple-400">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Image
+                  src="/chenpilot.png"
+                  alt="ChenPilot Logo"
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover"
+                />
+              </div>
+              <span className="text-xl font-thin text-purple-400" style={{ fontFamily: 'Manrope' }}>
                 ChenPilot
               </span>
             </div>
@@ -127,28 +136,32 @@ export default function Home() {
           <div className="text-center">
             <h1 className="text-6xl md:text-8xl font-bold mb-8">
               <span className="text-purple-400">
-                A Fast Blockchain.
+                Your Intelligent Agent
               </span>
               <br />
               <span className="text-white">
-                Scalable AI.
+                for Bitcoin and Beyond
               </span>
             </h1>
             
             <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-12 leading-relaxed">
-              Our technology performing fast blockchain (120K TPS) and it has guaranteed AI-based data security. 
-              Proof of Stake, its consensus algorithm enables unlimited speeds.
+              Chat with your crypto.
+              ChenAI connects Bitcoin, StarkNet, and other DeFi networks through a single AI-powered interface so you can swap, lend, bridge, and earn yield just by talking.
             </p>
 
-            <div className="flex justify-center items-center">
+            <div className="flex justify-center items-center space-x-4">
               <Button
                 onClick={() => router.push(isClient && isAuthenticated ? '/chat' : '/auth/login')}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold rounded-xl"
               >
-                Get Started
+                Try ChenAI Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
+            
+            <p className="text-sm text-gray-400 mt-4">
+              One agent. Every chain. No more dashboards, jargon, or code.
+            </p>
           </div>
         </div>
 
@@ -288,7 +301,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <span className="text-lg font-bold text-purple-400">
+              <span className="text-lg font-thin text-purple-400" style={{ fontFamily: 'Manrope' }}>
                 ChenPilot
               </span>
             </div>

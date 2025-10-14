@@ -112,7 +112,7 @@ export default function RegisterPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-purple-400">
+              <span className="text-xl font-thin text-purple-400" style={{ fontFamily: 'Manrope' }}>
                 ChenPilot
               </span>
             </div>
@@ -140,7 +140,7 @@ export default function RegisterPage() {
           <div className="space-y-8">
             <div>
               <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                <span className="text-purple-400">
+                <span className="text-purple-400" style={{ fontFamily: 'Manrope' }}>
                   Join ChenPilot
                 </span>
               </h1>

@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { sendMessage, addUserMessage, clearMessages, updateMessage } from '@/store/slices/chatSlice';
+import { sendMessage, clearMessages, updateMessage, saveConversationLocally } from '@/store/slices/chatSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ChatLayout } from '@/components/layout/ChatLayout';
+import { ClientOnlyChatLayout } from '@/components/layout/ClientOnlyChatLayout';
 import AgentMessage from '@/components/chat/AgentMessage';
 import UserMessage from '@/components/chat/UserMessage';
 import { 
@@ -25,25 +25,76 @@ import {
   DollarSign,
   Bitcoin,
   Building2,
-  Sun
+  Sun,
 } from 'lucide-react';
 import { formatRelativeTime } from '@/utils/format';
 import toast from 'react-hot-toast';
 
-export default function ChatPage() {
+// Speech Recognition types
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
+  onstart: () => void;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
+function ChatPageContent() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-  const { messages, isLoading, isTyping } = useAppSelector((state) => state.chat);
+  const { messages, isLoading: isChatLoading, isTyping, currentConversation } = useAppSelector((state) => state.chat);
   const [inputValue, setInputValue] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [speechResult, setSpeechResult] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -56,12 +107,107 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  // Save conversation when it changes
+  useEffect(() => {
+    if (currentConversation && messages.length > 0) {
+      dispatch(saveConversationLocally(currentConversation));
+    }
+  }, [dispatch, currentConversation, messages.length]);
+
   useEffect(() => {
     return () => {
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
     };
+  }, []);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onstart = () => {
+          setIsListening(true);
+        };
+
+        recognitionRef.current.onresult = (event) => {
+          let finalTranscript = '';
+          let interimTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+
+          if (finalTranscript) {
+            setSpeechResult(finalTranscript);
+            setInputValue(finalTranscript);
+            // Auto-stop recording when final transcript is received
+            if (recognitionRef.current) {
+              recognitionRef.current.stop();
+            }
+          } else {
+            setSpeechResult(interimTranscript);
+          }
+        };
+
+        recognitionRef.current.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+          setIsRecording(false);
+          
+          let errorMessage = 'Speech recognition failed. ';
+          switch (event.error) {
+            case 'no-speech':
+              errorMessage += 'No speech was detected. Please try again.';
+              break;
+            case 'audio-capture':
+              errorMessage += 'No microphone was found. Please check your microphone.';
+              break;
+            case 'not-allowed':
+              errorMessage += 'Microphone access denied. Please allow microphone access.';
+              break;
+            case 'network':
+              errorMessage += 'Network error occurred. Please check your connection.';
+              break;
+            default:
+              errorMessage += 'Please try again.';
+          }
+          
+          toast.error(errorMessage);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+          setIsRecording(false);
+          if (recordingIntervalRef.current) {
+            clearInterval(recordingIntervalRef.current);
+            setRecordingTime(0);
+          }
+          
+          // Clear speech result after a short delay to show the final text
+          if (speechResult && speechResult.trim()) {
+            toast.success('Speech recognized successfully!');
+            setTimeout(() => {
+              setSpeechResult('');
+            }, 2000);
+          }
+        };
+      }
+    }
   }, []);
 
   const scrollToBottom = () => {
@@ -70,13 +216,10 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
+    if (!inputValue.trim() || isChatLoading) return;
 
     const message = inputValue.trim();
     setInputValue('');
-
-    // Add user message immediately
-    dispatch(addUserMessage(message));
 
     try {
       // Include selected tool in the query if one is selected
@@ -106,29 +249,49 @@ export default function ChatPage() {
   };
 
   const startRecording = () => {
-    setIsRecording(true);
-    setRecordingTime(0);
-    recordingIntervalRef.current = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
-    }, 1000);
+    if (!recognitionRef.current) {
+      toast.error('Speech recognition is not supported in this browser');
+      return;
+    }
+
+    try {
+      setSpeechResult('');
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Start recording timer
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      // Start speech recognition
+      recognitionRef.current.start();
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+      toast.error('Failed to start speech recognition');
+      setIsRecording(false);
+    }
   };
 
   const stopRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    
     setIsRecording(false);
+    setIsListening(false);
+    
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
     }
     setRecordingTime(0);
   };
 
-  const enterVoiceMode = () => {
-    setIsVoiceMode(true);
-  };
-
-  const exitVoiceMode = () => {
-    setIsVoiceMode(false);
+  const toggleVoiceRecording = () => {
     if (isRecording) {
       stopRecording();
+    } else {
+      startRecording();
     }
   };
 
@@ -137,6 +300,7 @@ export default function ChatPage() {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
 
   const agentTools = [
     { name: 'Atomiq', description: 'DeFi protocol integration', icon: Zap },
@@ -164,17 +328,25 @@ export default function ChatPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-        <div className="text-center">
-          <p className="text-gray-300">Loading...</p>
+      <ClientOnlyChatLayout>
+        <div className="h-full flex flex-col bg-[#0F0F23] text-white overflow-hidden relative">
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-y-auto">
+              <div className="h-full flex flex-col items-center justify-center p-8">
+                <div className="text-center">
+                  <p className="text-gray-300">Redirecting to login...</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </ClientOnlyChatLayout>
     );
   }
 
 
   return (
-    <ChatLayout>
+    <ClientOnlyChatLayout>
       <div className="h-full flex flex-col bg-[#0F0F23] text-white overflow-hidden relative">
         {/* Chat Messages */}
         <div className="flex-1 overflow-hidden flex flex-col">
@@ -207,10 +379,23 @@ export default function ChatPage() {
                           }
                         }
                       }}
-                      placeholder="Ask ChenPilot"
-                      disabled={isLoading}
+                      placeholder={isRecording ? "Listening..." : "Ask ChenPilot"}
+                      disabled={isChatLoading}
                       className="w-full bg-transparent border-none text-white placeholder:text-gray-500 focus:outline-none text-lg mb-4"
                     />
+                    
+                    {/* Voice Recording Indicator */}
+                    {isRecording && (
+                      <div className="absolute right-0 top-0 flex items-center space-x-2 text-red-400">
+                        <div className="flex space-x-1">
+                          <div className="w-1 h-4 bg-red-400 rounded-full animate-pulse"></div>
+                          <div className="w-1 h-4 bg-red-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-1 h-4 bg-red-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                        <span className="text-xs font-mono">{formatRecordingTime(recordingTime)}</span>
+                      </div>
+                    )}
+                    
                     
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -239,14 +424,28 @@ export default function ChatPage() {
                           if (inputValue.trim()) {
                             handleSendMessage({ preventDefault: () => {} } as React.FormEvent);
                           } else {
-                            setIsVoiceMode(true);
+                            toggleVoiceRecording();
                           }
                         }}
-                        disabled={isLoading}
-                        className="p-3 text-white hover:bg-gray-800/50 rounded-lg transition-colors"
-                        title={inputValue.trim() ? "Send message" : "Voice mode"}
+                        disabled={isChatLoading}
+                        className={`p-3 rounded-lg transition-colors ${
+                          isRecording 
+                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
+                            : inputValue.trim() 
+                            ? 'text-white hover:bg-gray-800/50' 
+                            : 'text-white hover:bg-gray-800/50'
+                        }`}
+                        title={
+                          isRecording 
+                            ? "Stop recording" 
+                            : inputValue.trim() 
+                            ? "Send message" 
+                            : "Start voice recording"
+                        }
                       >
-                        {inputValue.trim() ? (
+                        {isRecording ? (
+                          <Square className="h-6 w-6" />
+                        ) : inputValue.trim() ? (
                           <Send className="h-6 w-6" />
                         ) : (
                           <Mic className="h-6 w-6" />
@@ -385,10 +584,23 @@ export default function ChatPage() {
                           }
                         }
                       }}
-                      placeholder="Ask ChenPilot"
-                      disabled={isLoading}
+                      placeholder={isRecording ? "Listening..." : "Ask ChenPilot"}
+                      disabled={isChatLoading}
                       className="w-full bg-transparent border-none text-white placeholder:text-gray-500 focus:outline-none text-lg mb-4"
                     />
+                    
+                    {/* Voice Recording Indicator */}
+                    {isRecording && (
+                      <div className="absolute right-0 top-0 flex items-center space-x-2 text-red-400">
+                        <div className="flex space-x-1">
+                          <div className="w-1 h-4 bg-red-400 rounded-full animate-pulse"></div>
+                          <div className="w-1 h-4 bg-red-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-1 h-4 bg-red-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                        <span className="text-xs font-mono">{formatRecordingTime(recordingTime)}</span>
+                      </div>
+                    )}
+                    
                     
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -417,14 +629,28 @@ export default function ChatPage() {
                           if (inputValue.trim()) {
                             handleSendMessage({ preventDefault: () => {} } as React.FormEvent);
                           } else {
-                            setIsVoiceMode(true);
+                            toggleVoiceRecording();
                           }
                         }}
-                        disabled={isLoading}
-                        className="p-3 text-white hover:bg-gray-800/50 rounded-lg transition-colors"
-                        title={inputValue.trim() ? "Send message" : "Voice mode"}
+                        disabled={isChatLoading}
+                        className={`p-3 rounded-lg transition-colors ${
+                          isRecording 
+                            ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
+                            : inputValue.trim() 
+                            ? 'text-white hover:bg-gray-800/50' 
+                            : 'text-white hover:bg-gray-800/50'
+                        }`}
+                        title={
+                          isRecording 
+                            ? "Stop recording" 
+                            : inputValue.trim() 
+                            ? "Send message" 
+                            : "Start voice recording"
+                        }
                       >
-                        {inputValue.trim() ? (
+                        {isRecording ? (
+                          <Square className="h-6 w-6" />
+                        ) : inputValue.trim() ? (
                           <Send className="h-6 w-6" />
                         ) : (
                           <Mic className="h-6 w-6" />
@@ -483,10 +709,14 @@ export default function ChatPage() {
             </div>
           </div>
         )}
+
+
       </div>
-    </ChatLayout>
+    </ClientOnlyChatLayout>
   );
 }
+
+export default ChatPageContent;
 
 <style jsx>{`
   @keyframes frequency-wave {
