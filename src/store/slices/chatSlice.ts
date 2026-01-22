@@ -103,33 +103,41 @@ export const sendMessage = createAsyncThunk(
         timestamp: new Date().toISOString(),
       };
 
-      // Send query to agent
-      const request: AgentQueryRequest = {
-        userId,
-        query,
+      // Mock agent response
+      const mockResponse = {
+        result: {
+          success: true,
+          data: `Mock agent response to: "${query}". This is a simulated response since backend is disconnected.`,
+          error: null,
+          metadata: {
+            type: 'info',
+            action: 'mock',
+            amount: null,
+            asset: null,
+            requiresConfirmation: false,
+          }
+        }
       };
-
-      const response = await apiService.queryAgent(request);
       
       // Save agent response locally (no server call needed)
       const agentMessage: ChatMessage = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         type: 'agent',
-        content: response.result.data,
+        content: mockResponse.result.data,
         timestamp: new Date().toISOString(),
         metadata: {
-          success: response.result.success,
-          error: response.result.error,
-          transactionHash: (response.result as any).transactionHash,
-          type: (response.result as any).metadata?.type,
-          action: (response.result as any).metadata?.action,
-          amount: (response.result as any).metadata?.amount,
-          asset: (response.result as any).metadata?.asset,
-          requiresConfirmation: (response.result as any).metadata?.requiresConfirmation,
+          success: mockResponse.result.success,
+          error: mockResponse.result.error,
+          transactionHash: null,
+          type: mockResponse.result.metadata?.type,
+          action: mockResponse.result.metadata?.action,
+          amount: mockResponse.result.metadata?.amount,
+          asset: mockResponse.result.metadata?.asset,
+          requiresConfirmation: mockResponse.result.metadata?.requiresConfirmation,
         }
       };
 
-      return { response, conversation, userMessage, agentMessage };
+      return { response: mockResponse, conversation, userMessage, agentMessage };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to send message');
     }
