@@ -47,32 +47,25 @@ const initialState: AccountState = {
 export const getAccountStatus = createAsyncThunk(
   'account/getStatus',
   async (_, { rejectWithValue }) => {
-    try {
-      const response = await apiService.getAccountStatus();
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to get account status');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get account status');
-    }
+    // Mock account status
+    const mockStatus: AccountStatus = {
+      isDeployed: true,
+      isFunded: true,
+      deploymentTransactionHash: '0xmockdeploymenthash',
+      fundingTransactionHash: '0xmockfundinghash',
+      balance: '1000000000000000000', // 1 ETH in wei
+      address: '0x1234567890abcdef',
+      publicKey: '0xabcdef1234567890',
+    };
+    return mockStatus;
   }
 );
 
 export const getBalance = createAsyncThunk(
   'account/getBalance',
   async (_, { rejectWithValue }) => {
-    try {
-      const response = await apiService.getBalance();
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to get balance');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get balance');
-    }
+    // Mock balance
+    return '1000000000000000000'; // 1 ETH in wei
   }
 );
 
@@ -122,48 +115,28 @@ export const getStellarNetworkStatus = createAsyncThunk(
 export const deployAccount = createAsyncThunk(
   'account/deploy',
   async (_, { rejectWithValue }) => {
-    try {
-      const response = await apiService.deployAccount();
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Account deployment failed');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Account deployment failed');
-    }
+    // Mock deploy account - always succeed
+    return { success: true, transactionHash: '0xmockdeployhash' };
   }
 );
 
 export const fundAccount = createAsyncThunk(
   'account/fund',
   async (_, { rejectWithValue }) => {
-    try {
-      const response = await apiService.fundAccount();
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Account funding failed');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Account funding failed');
-    }
+    // Mock fund account - always succeed
+    return { success: true, transactionHash: '0xmockfundhash' };
   }
 );
 
 export const getAutoFundingStats = createAsyncThunk(
   'account/getAutoFundingStats',
   async (_, { rejectWithValue }) => {
-    try {
-      const response = await apiService.getAutoFundingStats();
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to get funding stats');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get funding stats');
-    }
+    // Mock funding stats
+    return {
+      totalFunded: 10,
+      totalAmount: '10000000000000000000', // 10 ETH
+      lastFunding: new Date().toISOString(),
+    };
   }
 );
 
