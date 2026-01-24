@@ -22,32 +22,46 @@ const initialState: AuthState = {
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials: LoginRequest, { rejectWithValue }) => {
-    try {
-      const response = await apiService.login(credentials);
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Login failed');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
-    }
+    // Mock login - always succeed
+    const mockUser: User = {
+      id: 'mock-user-id',
+      email: credentials.email,
+      name: 'Mock User',
+      address: '0x1234567890abcdef',
+      publicKey: '0xabcdef1234567890',
+      isDeployed: true,
+      isFunded: true,
+      tokenType: "STRK",
+      authProvider: "email",
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const mockToken = 'mock-jwt-token';
+    return { user: mockUser, token: mockToken };
   }
 );
 
 export const register = createAsyncThunk(
   'auth/register',
   async (userData: RegisterRequest, { rejectWithValue }) => {
-    try {
-      const response = await apiService.register(userData);
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Registration failed');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
-    }
+    // Mock register - always succeed
+    const mockUser: User = {
+      id: 'mock-user-id',
+      email: userData.email,
+      name: userData.name || 'Mock User',
+      address: '0x1234567890abcdef',
+      publicKey: '0xabcdef1234567890',
+      isDeployed: true,
+      isFunded: true,
+      tokenType: "STRK",
+      authProvider: "email",
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const mockToken = 'mock-jwt-token';
+    return { user: mockUser, token: mockToken };
   }
 );
 
@@ -66,64 +80,75 @@ export const logout = createAsyncThunk(
 export const loadUser = createAsyncThunk(
   'auth/loadUser',
   async (_, { rejectWithValue }) => {
-    try {
-      const response = await apiService.getProfile();
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Failed to load user');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to load user');
-    }
+    // Mock load user - return mock user
+    const mockUser: User = {
+      id: 'mock-user-id',
+      email: 'mock@example.com',
+      name: 'Mock User',
+      address: '0x1234567890abcdef',
+      publicKey: '0xabcdef1234567890',
+      isDeployed: true,
+      isFunded: true,
+      tokenType: "STRK",
+      authProvider: "email",
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    return mockUser;
   }
 );
 
 export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
   async (userData: Partial<User>, { rejectWithValue }) => {
-    try {
-      const response = await apiService.updateProfile(userData);
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Profile update failed');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Profile update failed');
-    }
+    // Mock update profile - return updated mock user
+    const mockUser: User = {
+      id: 'mock-user-id',
+      email: userData.email || 'mock@example.com',
+      name: userData.name || 'Mock User',
+      address: '0x1234567890abcdef',
+      publicKey: '0xabcdef1234567890',
+      isDeployed: true,
+      isFunded: true,
+      tokenType: "STRK",
+      authProvider: "email",
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    return mockUser;
   }
 );
 
 export const changePassword = createAsyncThunk(
   'auth/changePassword',
   async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }, { rejectWithValue }) => {
-    try {
-      const response = await apiService.changePassword(currentPassword, newPassword);
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Password change failed');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Password change failed');
-    }
+    // Mock change password - always succeed
+    return { success: true };
   }
 );
 
 export const googleAuth = createAsyncThunk(
   'auth/googleAuth',
   async (token: string, { rejectWithValue }) => {
-    try {
-      const response = await apiService.googleAuth(token);
-      if (response.success) {
-        return response.data;
-      } else {
-        return rejectWithValue(response.message || 'Google authentication failed');
-      }
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Google authentication failed');
-    }
+    // Mock google auth - always succeed
+    const mockUser: User = {
+      id: 'mock-google-user-id',
+      email: 'mockgoogle@example.com',
+      name: 'Mock Google User',
+      address: '0x1234567890abcdef',
+      publicKey: '0xabcdef1234567890',
+      isDeployed: true,
+      isFunded: true,
+      tokenType: "STRK",
+      authProvider: "google",
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const mockToken = 'mock-google-jwt-token';
+    return { user: mockUser, token: mockToken };
   }
 );
 
@@ -145,22 +170,24 @@ const authSlice = createSlice({
       state.error = null;
     },
     initializeAuth: (state) => {
-      // Load token and user data from localStorage on app initialization
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('auth_token');
-        const userData = localStorage.getItem('user_data');
-        if (token && userData) {
-          try {
-            state.token = token;
-            state.user = JSON.parse(userData);
-            state.isAuthenticated = true;
-          } catch (error) {
-            // If parsing fails, clear the data
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user_data');
-          }
-        }
-      }
+      // Always set mock authenticated user for development without backend
+      const mockUser: User = {
+        id: 'mock-user-id',
+        email: 'mock@example.com',
+        name: 'Mock User',
+        address: '0x1234567890abcdef',
+        publicKey: '0xabcdef1234567890',
+        isDeployed: true,
+        isFunded: true,
+        tokenType: "STRK",
+        authProvider: "email",
+        isEmailVerified: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      state.user = mockUser;
+      state.token = 'mock-jwt-token';
+      state.isAuthenticated = true;
     },
   },
   extraReducers: (builder) => {

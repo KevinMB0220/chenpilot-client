@@ -135,7 +135,7 @@ export interface AgentQueryResponse {
 export interface ChatMessage {
   id: string;
   type: 'user' | 'agent' | 'system';
-  content: string | object;
+  content: string;
   timestamp: string;
   metadata?: {
     transactionHash?: string;

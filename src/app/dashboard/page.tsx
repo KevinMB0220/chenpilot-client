@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { getAccountStatus, getBalance, deployAccount, fundAccount } from '@/store/slices/accountSlice';
+import { getAccountStatus, getBalance, deployAccount, fundAccount, getStellarNetworkStatus } from '@/store/slices/accountSlice';
 import { loadUser } from '@/store/slices/authSlice';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -22,6 +22,8 @@ import {
   Wallet,
   Coins,
   Zap
+  Activity,
+  AlertTriangle
 } from 'lucide-react';
 import { formatAddress, formatTokenAmount } from '@/utils/format';
 import toast from 'react-hot-toast';
@@ -30,7 +32,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
-  const { status, balance, isLoading } = useAppSelector((state) => state.account);
+  const { status, balance, isLoading, network } = useAppSelector((state) => state.account);
   const { messages } = useAppSelector((state) => state.chat);
 
   useEffect(() => {
@@ -56,6 +58,21 @@ export default function DashboardPage() {
 
     return () => clearInterval(pollInterval);
   }, [dispatch, isAuthenticated, router, status?.isDeployed, status?.isFunded]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    const refreshNetworkStatus = () => {
+      dispatch(getStellarNetworkStatus());
+    };
+
+    refreshNetworkStatus();
+    const interval = setInterval(refreshNetworkStatus, 15000);
+
+    return () => clearInterval(interval);
+  }, [dispatch, isAuthenticated]);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -83,6 +100,38 @@ export default function DashboardPage() {
       color: 'bg-purple-500',
     },
   ];
+
+  const networkStatusLabel =
+    network.status === 'healthy'
+      ? 'Healthy'
+      : network.status === 'degraded'
+        ? 'Degraded'
+        : network.status === 'down'
+          ? 'Down'
+          : 'Checking';
+
+  const networkStatusColor =
+    network.status === 'healthy'
+      ? 'text-green-400'
+      : network.status === 'degraded'
+        ? 'text-yellow-400'
+        : network.status === 'down'
+          ? 'text-red-400'
+          : 'text-gray-300';
+
+  const syncStatusLabel =
+    network.accountSyncState === 'synced'
+      ? 'Synced'
+      : network.accountSyncState === 'syncing'
+        ? 'Syncing'
+        : 'Desynced';
+
+  const syncStatusColor =
+    network.accountSyncState === 'synced'
+      ? 'text-green-400'
+      : network.accountSyncState === 'syncing'
+        ? 'text-yellow-400'
+        : 'text-red-400';
 
   if (!isAuthenticated) {
     return (
@@ -276,6 +325,115 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-medium text-white">
                       Recent Chat Messages
+        {/* Stellar Network */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Stellar Network
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-300">
+                    Network Status
+                  </p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Activity className={`h-4 w-4 ${networkStatusColor}`} />
+                    <span className={`text-lg font-semibold ${networkStatusColor}`}>
+                      {networkStatusLabel}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => dispatch(getStellarNetworkStatus())}
+                >
+                  Refresh
+                </Button>
+              </div>
+              <div className="mt-4 space-y-2 text-sm text-gray-300">
+                <div className="flex items-center justify-between">
+                  <span>Latest Ledger</span>
+                  <span className="text-white font-medium">
+                    {network.latestLedger ?? 'Loading...'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Ledger Age</span>
+                  <span className="text-white font-medium">
+                    {network.ledgerAgeSeconds !== null
+                      ? `${network.ledgerAgeSeconds}s`
+                      : 'Loading...'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Last Updated</span>
+                  <span className="text-white font-medium">
+                    {network.lastUpdated
+                      ? new Date(network.lastUpdated).toLocaleTimeString()
+                      : 'Loading...'}
+                  </span>
+                </div>
+              </div>
+              {network.congestion && (
+                <div className="mt-4 flex items-start space-x-2 rounded-lg bg-yellow-500/10 p-3 text-yellow-300">
+                  <AlertTriangle className="h-4 w-4 mt-0.5" />
+                  <span className="text-sm">
+                    Congestion detected. Transactions may take longer to confirm.
+                  </span>
+                </div>
+              )}
+            </Card>
+
+            <Card>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-300">
+                    Account Sync State
+                  </p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span className={`text-lg font-semibold ${syncStatusColor}`}>
+                      {syncStatusLabel}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Based on the latest ledger signal from Horizon.
+                  </p>
+                </div>
+              </div>
+              {network.accountSyncState === 'desynced' && (
+                <div className="mt-4 flex items-start space-x-2 rounded-lg bg-red-500/10 p-3 text-red-300">
+                  <AlertTriangle className="h-4 w-4 mt-0.5" />
+                  <span className="text-sm">
+                    Account appears out of sync. Try refreshing or check network conditions.
+                  </span>
+                </div>
+              )}
+              {network.accountSyncState === 'syncing' && (
+                <div className="mt-4 flex items-start space-x-2 rounded-lg bg-yellow-500/10 p-3 text-yellow-300">
+                  <AlertTriangle className="h-4 w-4 mt-0.5" />
+                  <span className="text-sm">
+                    Syncing with the network. Recent updates may be delayed.
+                  </span>
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {quickActions.map((action, index) => (
+              <Card key={index} className="cursor-pointer hover:shadow-lg transition-shadow">
+                <div className="flex items-start space-x-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-white mb-1">
+                      {action.title}
                     </h3>
                     <Button
                       variant="ghost"
