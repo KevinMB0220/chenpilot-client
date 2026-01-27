@@ -1,42 +1,34 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AccountStatus, WalletBalance } from '@/types';
-import apiService from '@/services/api';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import {
+  AccountStatus,
+  WalletBalance,
+  TransactionHistory,
+  StellarTransaction,
+  StellarOperation,
+  AccountState,
+} from "@/types";
+import apiService from "@/services/api";
 
-type NetworkHealthStatus = 'healthy' | 'degraded' | 'down' | 'unknown';
-type AccountSyncState = 'synced' | 'syncing' | 'desynced';
-
-interface StellarNetworkState {
-  status: NetworkHealthStatus;
-  latestLedger: number | null;
-  ledgerCloseTimeMs: number | null;
-  ledgerAgeSeconds: number | null;
-  congestion: boolean;
-  accountSyncState: AccountSyncState;
-  lastUpdated: string | null;
-  isLoading: boolean;
-  error: string | null;
-}
-
-interface AccountState {
-  status: AccountStatus | null;
-  balance: WalletBalance | null;
-  isLoading: boolean;
-  error: string | null;
-  network: StellarNetworkState;
-}
+type NetworkHealthStatus = "healthy" | "degraded" | "down" | "unknown";
+type AccountSyncState = "synced" | "syncing" | "desynced";
 
 const initialState: AccountState = {
   status: null,
   balance: null,
+  transactions: {
+    transactions: [],
+    isLoading: false,
+    error: null,
+  },
   isLoading: false,
   error: null,
   network: {
-    status: 'unknown',
+    status: "unknown",
     latestLedger: null,
     ledgerCloseTimeMs: null,
     ledgerAgeSeconds: null,
     congestion: false,
-    accountSyncState: 'syncing',
+    accountSyncState: "syncing",
     lastUpdated: null,
     isLoading: false,
     error: null,
@@ -45,42 +37,44 @@ const initialState: AccountState = {
 
 // Async thunks
 export const getAccountStatus = createAsyncThunk(
-  'account/getStatus',
+  "account/getStatus",
   async (_, { rejectWithValue }) => {
     // Mock account status
     const mockStatus: AccountStatus = {
       isDeployed: true,
       isFunded: true,
-      deploymentTransactionHash: '0xmockdeploymenthash',
-      fundingTransactionHash: '0xmockfundinghash',
-      balance: '1000000000000000000', // 1 ETH in wei
-      address: '0x1234567890abcdef',
-      publicKey: '0xabcdef1234567890',
+      deploymentTransactionHash: "0xmockdeploymenthash",
+      fundingTransactionHash: "0xmockfundinghash",
+      balance: "1000000000000000000", // 1 ETH in wei
+      address: "0x1234567890abcdef",
+      publicKey: "0xabcdef1234567890",
     };
     return mockStatus;
-  }
+  },
 );
 
 export const getBalance = createAsyncThunk(
-  'account/getBalance',
+  "account/getBalance",
   async (_, { rejectWithValue }) => {
     // Mock balance
-    return '1000000000000000000'; // 1 ETH in wei
-  }
+    return "1000000000000000000"; // 1 ETH in wei
+  },
 );
 
 export const getStellarNetworkStatus = createAsyncThunk(
-  'account/getStellarNetworkStatus',
+  "account/getStellarNetworkStatus",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('https://horizon.stellar.org/ledgers?order=desc&limit=1');
+      const response = await fetch(
+        "https://horizon.stellar.org/ledgers?order=desc&limit=1",
+      );
       if (!response.ok) {
-        return rejectWithValue('Failed to fetch Stellar network status');
+        return rejectWithValue("Failed to fetch Stellar network status");
       }
       const data = await response.json();
       const latestLedgerRecord = data?._embedded?.records?.[0];
       if (!latestLedgerRecord) {
-        return rejectWithValue('No ledger data available');
+        return rejectWithValue("No ledger data available");
       }
 
       const latestLedger = Number(latestLedgerRecord.sequence);
@@ -107,47 +101,97 @@ export const getStellarNetworkStatus = createAsyncThunk(
         lastUpdated: new Date().toISOString(),
       };
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to fetch Stellar network status');
+      return rejectWithValue(
+        error.message || "Failed to fetch Stellar network status",
+      );
     }
-  }
+  },
 );
 
 export const deployAccount = createAsyncThunk(
-  'account/deploy',
+  "account/deploy",
   async (_, { rejectWithValue }) => {
     // Mock deploy account - always succeed
-    return { success: true, transactionHash: '0xmockdeployhash' };
-  }
+    return { success: true, transactionHash: "0xmockdeployhash" };
+  },
 );
 
 export const fundAccount = createAsyncThunk(
-  'account/fund',
+  "account/fund",
   async (_, { rejectWithValue }) => {
     // Mock fund account - always succeed
-    return { success: true, transactionHash: '0xmockfundhash' };
-  }
+    return { success: true, transactionHash: "0xmockfundhash" };
+  },
 );
 
 export const getAutoFundingStats = createAsyncThunk(
-  'account/getAutoFundingStats',
+  "account/getAutoFundingStats",
   async (_, { rejectWithValue }) => {
     // Mock funding stats
     return {
       totalFunded: 10,
-      totalAmount: '10000000000000000000', // 10 ETH
+      totalAmount: "10000000000000000000", // 10 ETH
       lastFunding: new Date().toISOString(),
     };
-  }
+  },
+);
+
+export const getTransactionHistory = createAsyncThunk(
+  "account/getTransactionHistory",
+  async (publicKey: string, { rejectWithValue }) => {
+    try {
+      const response = await fetch(
+        `https://horizon.stellar.org/accounts/${publicKey}/transactions?order=desc&limit=50`,
+      );
+      if (!response.ok) {
+        return rejectWithValue("Failed to fetch transaction history");
+      }
+      const data = await response.json();
+      const transactions: StellarTransaction[] = data._embedded.records.map(
+        (record: any) => ({
+          id: record.id,
+          hash: record.hash,
+          ledger: record.ledger,
+          created_at: record.created_at,
+          source_account: record.source_account,
+          fee_charged: record.fee_charged,
+          operation_count: record.operation_count,
+          successful: record.successful,
+          operations:
+            record._embedded?.records?.map((op: any) => ({
+              id: op.id,
+              type: op.type,
+              amount: op.amount,
+              asset:
+                op.asset_type === "native"
+                  ? "XLM"
+                  : `${op.asset_code}:${op.asset_issuer}`,
+              from: op.from,
+              to: op.to,
+              source_account: op.source_account,
+            })) || [],
+        }),
+      );
+      return transactions;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.message || "Failed to fetch transaction history",
+      );
+    }
+  },
 );
 
 const accountSlice = createSlice({
-  name: 'account',
+  name: "account",
   initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
     },
-    updateAccountStatus: (state, action: PayloadAction<Partial<AccountStatus>>) => {
+    updateAccountStatus: (
+      state,
+      action: PayloadAction<Partial<AccountStatus>>,
+    ) => {
       if (state.status) {
         state.status = { ...state.status, ...action.payload };
       } else {
@@ -201,28 +245,33 @@ const accountSlice = createSlice({
       .addCase(getStellarNetworkStatus.pending, (state) => {
         state.network.isLoading = true;
         state.network.error = null;
-        state.network.accountSyncState = 'syncing';
+        state.network.accountSyncState = "syncing";
       })
       .addCase(getStellarNetworkStatus.fulfilled, (state, action) => {
-        const { latestLedger, ledgerCloseTimeMs, ledgerAgeSeconds, congestion, lastUpdated } =
-          action.payload;
-        let status: NetworkHealthStatus = 'healthy';
+        const {
+          latestLedger,
+          ledgerCloseTimeMs,
+          ledgerAgeSeconds,
+          congestion,
+          lastUpdated,
+        } = action.payload;
+        let status: NetworkHealthStatus = "healthy";
         if (ledgerAgeSeconds !== null && ledgerAgeSeconds > 30) {
-          status = 'down';
+          status = "down";
         } else if (ledgerAgeSeconds !== null && ledgerAgeSeconds > 15) {
-          status = 'degraded';
+          status = "degraded";
         } else if (congestion) {
-          status = 'degraded';
+          status = "degraded";
         }
 
         const accountSyncState: AccountSyncState =
           ledgerAgeSeconds === null
-            ? 'desynced'
+            ? "desynced"
             : ledgerAgeSeconds > 30
-              ? 'desynced'
+              ? "desynced"
               : ledgerAgeSeconds > 15
-                ? 'syncing'
-                : 'synced';
+                ? "syncing"
+                : "synced";
 
         state.network = {
           ...state.network,
@@ -239,9 +288,9 @@ const accountSlice = createSlice({
       })
       .addCase(getStellarNetworkStatus.rejected, (state, action) => {
         state.network.isLoading = false;
-        state.network.status = 'down';
+        state.network.status = "down";
         state.network.error = action.payload as string;
-        state.network.accountSyncState = 'desynced';
+        state.network.accountSyncState = "desynced";
       })
       // Deploy Account
       .addCase(deployAccount.pending, (state) => {
@@ -252,7 +301,8 @@ const accountSlice = createSlice({
         state.isLoading = false;
         if (state.status) {
           state.status.isDeployed = true;
-          state.status.deploymentTransactionHash = action.payload.transactionHash;
+          state.status.deploymentTransactionHash =
+            action.payload.transactionHash;
         }
         state.error = null;
       })
@@ -289,9 +339,24 @@ const accountSlice = createSlice({
       .addCase(getAutoFundingStats.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // Get Transaction History
+      .addCase(getTransactionHistory.pending, (state) => {
+        state.transactions.isLoading = true;
+        state.transactions.error = null;
+      })
+      .addCase(getTransactionHistory.fulfilled, (state, action) => {
+        state.transactions.isLoading = false;
+        state.transactions.transactions = action.payload;
+        state.transactions.error = null;
+      })
+      .addCase(getTransactionHistory.rejected, (state, action) => {
+        state.transactions.isLoading = false;
+        state.transactions.error = action.payload as string;
       });
   },
 });
 
-export const { clearError, updateAccountStatus, updateBalance, clearAccount } = accountSlice.actions;
+export const { clearError, updateAccountStatus, updateBalance, clearAccount } =
+  accountSlice.actions;
 export default accountSlice.reducer;
