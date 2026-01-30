@@ -122,6 +122,35 @@ export interface WalletBalance {
   nativeBalance: string;
 }
 
+// Stellar Transaction Types
+export interface StellarOperation {
+  id: string;
+  type: string; // e.g., 'payment', 'create_account', 'trust', etc.
+  amount?: string;
+  asset?: string;
+  from?: string;
+  to?: string;
+  source_account: string;
+}
+
+export interface StellarTransaction {
+  id: string;
+  hash: string;
+  ledger: number;
+  created_at: string;
+  source_account: string;
+  fee_charged: string;
+  operation_count: number;
+  successful: boolean;
+  operations: StellarOperation[];
+}
+
+export interface TransactionHistory {
+  transactions: StellarTransaction[];
+  isLoading: boolean;
+  error: string | null;
+}
+
 // Agent Query Types
 export interface AgentQueryRequest {
   userId: string;
@@ -139,14 +168,14 @@ export interface AgentQueryResponse {
 // Chat and Message Types
 export interface ChatMessage {
   id: string;
-  type: 'user' | 'agent' | 'system';
+  type: "user" | "agent" | "system";
   content: string;
   timestamp: string;
   metadata?: {
     transactionHash?: string;
     amount?: string;
     tokenType?: string;
-    status?: 'pending' | 'success' | 'failed';
+    status?: "pending" | "success" | "failed";
     success?: boolean;
     error?: string;
     type?: string;
@@ -186,7 +215,7 @@ export type ApiResponse<T> = ApiSuccess<T> | ApiError;
 // UI State Types
 export interface Notification {
   id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: "success" | "error" | "warning" | "info";
   title: string;
   message: string;
   duration?: number;
@@ -194,14 +223,14 @@ export interface Notification {
 }
 
 export interface Theme {
-  mode: 'light' | 'dark';
+  mode: "light" | "dark";
 }
 
 // Form Types
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'select';
+  type: "text" | "email" | "password" | "number" | "select";
   placeholder?: string;
   required?: boolean;
   validation?: any;
@@ -224,7 +253,7 @@ export interface Environment {
   GOOGLE_CLIENT_ID: string;
   APP_NAME: string;
   APP_VERSION: string;
-  NODE_ENV: 'development' | 'production' | 'test';
+  NODE_ENV: "development" | "production" | "test";
 }
 
 // Redux State Types
@@ -239,8 +268,20 @@ export interface AuthState {
 export interface AccountState {
   status: AccountStatus | null;
   balance: WalletBalance | null;
+  transactions: TransactionHistory;
   isLoading: boolean;
   error: string | null;
+  network: {
+    status: 'healthy' | 'degraded' | 'down' | 'unknown';
+    latestLedger: number | null;
+    ledgerCloseTimeMs: number | null;
+    ledgerAgeSeconds: number | null;
+    congestion: boolean;
+    accountSyncState: 'synced' | 'syncing' | 'desynced';
+    lastUpdated: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
 }
 
 export interface ContactsState {
@@ -276,13 +317,13 @@ export interface RootState {
 
 // Component Props Types
 export interface ButtonProps {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "ghost" | "danger";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   loading?: boolean;
   children: React.ReactNode;
   onClick?: () => void;
-  type?: 'button' | 'submit' | 'reset';
+  type?: "button" | "submit" | "reset";
   className?: string;
 }
 
@@ -301,7 +342,7 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }
 
@@ -316,8 +357,8 @@ export interface CardProps {
 // Utility Types
 export type TokenType = "XLM" | "USDC" | "USDT" | "BTC" | "ETH" | "AQUA";
 export type AuthProvider = "email" | "google";
-export type MessageType = 'user' | 'agent' | 'system';
-export type NotificationType = 'success' | 'error' | 'warning' | 'info';
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
-export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
+export type MessageType = "user" | "agent" | "system";
+export type NotificationType = "success" | "error" | "warning" | "info";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md" | "lg";
+export type ModalSize = "sm" | "md" | "lg" | "xl";
